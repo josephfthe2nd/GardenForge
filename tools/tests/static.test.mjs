@@ -28,6 +28,7 @@ test('reference data and embedded state are valid JSON', () => {
     assert.ok(c.id && c.name && Array.isArray(c.windows), `crop ${c.id} malformed`);
     for (const [a, b] of c.windows) assert.match(a + b, /^\d{2}-\d{2}\d{2}-\d{2}$/, `crop ${c.id} window ${a}-${b}`);
     // Only crops that cite a source may carry planting windows; flowers/herbs without a regional source stay empty.
+    assert.ok(c.source === null || typeof c.source === 'string', `crop ${c.id}: source must be null or a source id`);
     if (!c.source) assert.equal(c.windows.length, 0, `${c.id} has planting windows but no source`);
   }
   const embedded = html.match(/<script id="embedded-state" type="application\/json">([\s\S]*?)<\/script>/);

@@ -68,15 +68,18 @@ export async function openApp(page, baseUrl, { state = fixture, hash = '#overvie
   await page.addInitScript(
     ({ key, json }) => {
       localStorage.setItem(key, json);
-      window.__probe = { createObjectURL: 0, revokeObjectURL: 0, idbOpen: 0 };
+      window.__probe = { createObjectURL: 0, revokeObjectURL: 0, idbOpen: 0, liveUrls: {} };
       const co = URL.createObjectURL.bind(URL);
       const ro = URL.revokeObjectURL.bind(URL);
       URL.createObjectURL = (b) => {
         window.__probe.createObjectURL++;
-        return co(b);
+        const u = co(b);
+        window.__probe.liveUrls[u] = 1;
+        return u;
       };
       URL.revokeObjectURL = (u) => {
         window.__probe.revokeObjectURL++;
+        delete window.__probe.liveUrls[u];
         return ro(u);
       };
       const io = indexedDB.open.bind(indexedDB);
@@ -118,3 +121,9 @@ export async function makePng(page, width = 800, height = 600, color = '#3a7d44'
 }
 
 export const toastText = (page) => page.evaluate(() => document.getElementById('toast').textContent);
+
+/** Horizontal overflow in CSS px. Uses clientWidth: under mobile emulation innerWidth stretches to the content and hides overflow. */
+export const overflowPx = (page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+
+/** Number of blob: URLs created and not yet revoked. */
+export const liveBlobUrls = (page) => page.evaluate(() => Object.keys(window.__probe.liveUrls).length);
