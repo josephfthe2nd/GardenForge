@@ -24,6 +24,41 @@ depends on it.
 > fallback keeps every credential on the server. Nothing has been provisioned, and nothing should be until the
 > iPhone spike in the summary below has run and the owner has chosen.
 
+## 0. Decision taken by the owner (2026-10-01): self-hosted PocketBase
+
+After reading the comparison the owner chose to **self-host the backend** rather than pay for Supabase Pro or
+accept a free project that pauses. This section records that decision; sections 1 to 8 below are the comparison
+it was made from and stay as written.
+
+**What changes.** Only the server. The client sync engine, local change log, push/pull protocol, conflict rule,
+content-addressed photo pipeline and sync-state machine in section 4 are unchanged. The server is
+[PocketBase](https://pocketbase.io): one Go binary with SQLite, built-in email/password auth, file storage on the
+server's own disk, an admin UI, and JavaScript hooks that implement the same `sync/push`, `sync/pull` and
+`sync/status` endpoints described in section 4.5. Photos are files under the server's data directory, keyed by
+SHA-256 with a per-owner unique index, so a photo is stored once. Every credential stays on the server; the app
+holds only a session token, which is the strongest reading of requirement R10.
+
+**Where it runs.** On a machine the owner controls (Raspberry Pi, old PC, NAS, or a small VPS), reachable from
+the garden over a free tunnel: a Cloudflare named tunnel when the owner has a domain on Cloudflare, or Tailscale
+Funnel when there is no domain (stable `*.ts.net` hostname). The tunnel exposes only `/api/*`; the admin UI is
+reached over the LAN or an SSH tunnel. Setup files and the runbook are under `server/`.
+
+**Cost.** $0 recurring on hardware the owner already has; a domain is about $10–15 a year if a Cloudflare tunnel
+is used; a VPS alternative is roughly $4–6 a month. Electricity for a Pi is negligible.
+
+**What the owner takes on.** Nightly backups to a second location (the scripts under `server/` do this, but
+the second location is the owner's to provide), applying PocketBase updates, and keeping the machine on. If the
+machine is off, the app keeps working offline and syncs when it returns; nothing is lost, nothing merges until
+then.
+
+**Verification status.** The `server/` component was written from PocketBase's official documentation for
+v0.39 and has **not been executed**: this sandbox's policy does not allow building or running external binaries.
+The integration test in `tools/tests/server.test.mjs` and the smoke script must be run on the owner's machine (or
+in a session permitted to run the binary) before the client work in Phase 1 starts. Supabase-direct (section 1)
+remains the fallback if self-hosting proves impractical.
+
+---
+
 ## 1. Summary and recommendation
 
 **Primary stack: Supabase (Postgres + Auth + Storage, guarded by Row Level Security), called directly from the

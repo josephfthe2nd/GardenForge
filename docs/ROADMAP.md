@@ -58,10 +58,18 @@ each behind a non-destructive migration and a backup prompt:
 
 ## Phase 3: multi-device sync
 
-Decision document: `docs/SYNC-ARCHITECTURE.md`. Phases there: local change log and export v2 with no cloud
-(testable offline), account and metadata sync, photo sync with content-addressed dedupe, then the
-server-side AI endpoint. The owner approves before any paid or free-tier infrastructure is provisioned;
-nothing has been provisioned.
+Decision document: `docs/SYNC-ARCHITECTURE.md`. The owner chose a **self-hosted PocketBase** server behind a
+free tunnel (section 0 there); the server scaffold, installer, tunnel configuration, backup scripts and an
+integration test live under `server/`, written from the official documentation and not yet executed. Order:
+
+1. Owner installs the server on their machine with `server/install.sh`, runs the smoke test and the integration
+   test, and confirms the tunnel hostname works from the phone on cellular.
+2. Client phase 0: local change log and export v2 with no cloud (testable offline).
+3. Client phase 1: sign-in and metadata sync against the owner's server.
+4. Client phase 2: photo sync with content-addressed dedupe.
+5. Then the server-side AI endpoint (Phase 4).
+
+No paid infrastructure is involved; Supabase remains the documented fallback.
 
 ## Phase 4: AI camera and scanning (feature 6)
 
