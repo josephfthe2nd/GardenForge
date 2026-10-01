@@ -101,8 +101,8 @@ function empty(title,text,button=''){return `<div class="empty">${ico('seed')}<h
 function defaultDraft(r=DB.recipes[1]){return {presetId:r.id,name:r.name,type:r.type,description:r.description,parts:clone(r.parts),target:10,unit:'gal',rates:{},enrichedBio:null,enrichedZeo:null,notes:''}}
 function defaultState(){return {schemaVersion:1,updatedAt:'',settings:{name:'My Brownsville garden',zone:'10a'},draft:defaultDraft(),recipes:[],beds:[],plans:[],logs:[],completed:{},customCrops:[],customIngredients:[]}}
 function validateState(s){
- if(!s||s.schemaVersion!==1||!s.settings||!s.draft)throw Error('This is not a GardenForge version 1 backup.');
- for(const k of ['recipes','beds','plans','logs','customCrops','customIngredients'])if(!Array.isArray(s[k])||s[k].length>1500)throw Error('Invalid '+k+' collection.');
+ if(!s||s.schemaVersion!==1||!s.settings||!s.draft)throw Error('This is not a GardenForge version 1 backup.');if(!s.completed||typeof s.completed!=='object'||Array.isArray(s.completed))throw Error('Invalid task check-off list.');if(!s.draft.rates||typeof s.draft.rates!=='object'||Array.isArray(s.draft.rates))throw Error('Invalid amendment rates.');
+ for(const k of ['recipes','beds','plans','logs','customCrops','customIngredients'])if(!Array.isArray(s[k])||s[k].length>20000)throw Error('Invalid '+k+' collection.');
  if(!UNITS[s.draft.unit]||!s.draft.parts||typeof s.draft.parts!=='object'||!Number.isFinite(s.draft.target)||s.draft.target<0||s.draft.target>1e8)throw Error('Invalid mix volume.');
  function validParts(d){if(!d.parts||Object.values(d.parts).some(x=>!Number.isFinite(x)||x<0||x>1e8))throw Error('Invalid ingredient parts.');if(d.rates&&Object.values(d.rates).some(x=>!Number.isFinite(x)||x<0||x>1e8))throw Error('Invalid amendment rates.');for(const k of ['enrichedBio','enrichedZeo'])if(d[k]!=null&&(!Number.isFinite(d[k])||d[k]<0||d[k]>100))throw Error('Invalid carried-in amendment percentage.');if(n(d.enrichedBio)+n(d.enrichedZeo)>100)throw Error('Carried-in fractions cannot exceed 100%.')}
  validParts(s.draft);s.recipes.forEach(validParts);
@@ -113,13 +113,17 @@ function validateState(s){
  for(const i of s.customIngredients)if(!i.id||!i.name||typeof i.id!=='string')throw Error('Invalid ingredient entry.');
  return s;
 }
-let state=defaultState(),storageOK=true,loadWarning='';
+let state=defaultState(),storageOK=true,loadWarning='',unreadableSaved=null,keyProtected=false;
 try{const embedded=JSON.parse(document.getElementById('embedded-state').textContent||'null');if(embedded)state=validateState(embedded)}catch(e){loadWarning='Embedded garden data could not be loaded. '+e.message}
-try{const saved=localStorage.getItem(KEY);if(saved){const candidate=validateState(JSON.parse(saved));if(!state.updatedAt||candidate.updatedAt>=state.updatedAt)state=candidate}localStorage.setItem(KEY,JSON.stringify(state))}catch(e){storageOK=false;loadWarning='Browser saving is unavailable or existing data could not be read. Export a backup before closing this page.'}
+try{const saved=localStorage.getItem(KEY);if(saved){try{const candidate=validateState(JSON.parse(saved));if(!state.updatedAt||candidate.updatedAt>=state.updatedAt)state=candidate}catch(e){
+ /* The saved garden exists but fails validation. Never start empty over it: copy it to a recovery slot first, and if even that fails, block saving until it has been downloaded. */
+ unreadableSaved=saved;let slot='';try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(KEY+'.unreadable.')&&localStorage.getItem(k)===saved){slot=k;break}}if(!slot){slot=KEY+'.unreadable.'+new Date().toISOString().replace(/[:.]/g,'-');localStorage.setItem(slot,saved)}}catch(e2){slot='';keyProtected=true}
+ loadWarning='Saved garden data could not be read ('+e.message+'). '+(slot?'An untouched copy is kept in this browser as "'+slot+'"; nothing has been overwritten.':'It could not be copied to a recovery slot, so saving is paused until you download it.')+' Download it now, then import a good backup.'}}
+ if(!unreadableSaved)localStorage.setItem(KEY,JSON.stringify(state))}catch(e){storageOK=false;loadWarning='Browser saving is unavailable or existing data could not be read. Export a backup before closing this page.'}
 const ui={page:'overview',month:today().slice(0,7),query:'',group:'All',calendarMode:'cards',taskFilter:'upcoming',showCompleted:false};
 let toastTimer;
 function toast(text){const el=document.getElementById('toast');el.textContent=text;el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),3500)}
-function save(){state.updatedAt=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(state));storageOK=true}catch(e){storageOK=false}updateSaveStatus()}
+function save(){if(keyProtected){storageOK=false;updateSaveStatus();toast('Not saved: first download the unreadable garden data from the warning at the top of the page.');return}state.updatedAt=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(state));storageOK=true}catch(e){if(storageOK)toast('Saving to this browser failed (storage full or blocked). Export a backup now.');storageOK=false}updateSaveStatus()}
 function updateSaveStatus(){document.getElementById('save-status').textContent=storageOK?'Saved in this browser':'Session only · export backup';document.getElementById('zone-chip').textContent='Zone '+state.settings.zone+' · reference'}
 function crops(){return [...DB.crops,...state.customCrops]}
 function cropBy(id){return crops().find(x=>x.id===id)}
@@ -209,6 +213,7 @@ function advanceMonth(step){let d=dateObj(ui.month+'-01');d.setUTCMonth(d.getUTC
 function handleAction(btn){const a=btn.dataset.action,id=btn.dataset.id;switch(a){
  case'dialog-close':closeDialog();break;
  case'export-json':exportJSON();break;
+ case'download-unreadable':if(unreadableSaved){deliverFile('GardenForge-unreadable-'+today()+'.json',unreadableSaved,'application/json');keyProtected=false}break;
  case'import-json':document.getElementById('import-file').click();break;
  case'export-portable':exportPortable();break;
  case'export-ics':exportICS();break;
@@ -328,9 +333,12 @@ document.addEventListener('submit',e=>{if(!['plan-form','bed-form','recipe-form'
 });
 document.getElementById('brand-icon').innerHTML=ico('seed','lg');
 document.getElementById('mobile-brand-icon').innerHTML=ico('seed');
-if(loadWarning){const el=document.getElementById('boot-warning');el.hidden=false;el.textContent=loadWarning}
+if(loadWarning){const el=document.getElementById('boot-warning');el.hidden=false;el.textContent=loadWarning;if(unreadableSaved){const b=document.createElement('button');b.className='btn';b.style.marginTop='8px';b.dataset.action='download-unreadable';b.textContent='Download unreadable garden data';el.append(document.createElement('br'),b)}}
 const initialPage=location.hash.slice(1);if(PAGES.includes(initialPage))ui.page=initialPage;
-nav();render();document.getElementById('preview-fallback').hidden=true;setupOffline();
+try{nav();render()}catch(e){
+ /* A render failure used to leave the "static attachment preview" notice on screen, which reads as if the app were simply not running. Say what happened and keep the backup controls reachable. */
+ const el=document.getElementById('boot-warning');el.hidden=false;el.textContent='GardenForge could not draw this page ('+e.message+'). Your saved data has not been changed. Export a backup, then reload.';el.insertAdjacentHTML('beforeend','<div class="actions" style="margin-top:8px"><button class="btn primary" data-action="export-json">Export JSON backup</button><button class="btn" data-action="backup-text">Copy backup text</button></div>')}
+document.getElementById('preview-fallback').hidden=true;setupOffline();
 // Growth galleries are refreshed explicitly by render(), saveGrowthPhoto() and the photo delete handler. A MutationObserver on #view used to do this, but it re-triggered on the galleries' own DOM writes and looped continuously on the Garden page.
 // Plain functions are exposed for local diagnostics; no network or third-party tracking is used.
 window.GardenForge={version:APP_VERSION,getState:()=>clone(state),getStats:()=>({regionalCrops:DB.crops.filter(c=>c.source).length,recipes:DB.recipes.length}),calculations:{inWindow,nextDate,monthMatch,mixNumbers,addDays,buildICS},validateState};

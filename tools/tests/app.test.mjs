@@ -3,7 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { startServer, openApp, phoneContext, tapTab, probe, makePng, toastText, fixture } from './helpers.mjs';
+import { startServer, openApp, phoneContext, tapTab, probe, makePng, fixture, STORAGE_KEY } from './helpers.mjs';
 
 let browser, srv;
 before(async () => {
@@ -113,13 +113,15 @@ test('validateState accepts the fixture and rejects malformed backups', async ()
     badPlan.plans[0].count = 0;
     const badDate = JSON.parse(JSON.stringify(fx));
     badDate.logs[0].date = '2026-13-40';
-    return { good: tryIt(fx), v2: tryIt({ ...fx, schemaVersion: 2 }), badPlan: tryIt(badPlan), badDate: tryIt(badDate), empty: tryIt(null) };
+    return { good: tryIt(fx), v2: tryIt({ ...fx, schemaVersion: 2 }), badPlan: tryIt(badPlan), badDate: tryIt(badDate), empty: tryIt(null), noCompleted: tryIt({ ...fx, completed: null }), noRates: tryIt({ ...fx, draft: { ...fx.draft, rates: undefined } }) };
   }, fixture);
   assert.equal(r.good, 'ok');
   assert.match(r.v2, /^rejected/);
   assert.match(r.badPlan, /^rejected/);
   assert.match(r.badDate, /^rejected/);
   assert.match(r.empty, /^rejected/);
+  assert.match(r.noCompleted, /^rejected/, 'completed must be an object: render() dereferences it');
+  assert.match(r.noRates, /^rejected/, 'draft.rates must be an object: the mix page dereferences it');
   await ctx.close();
 });
 
@@ -171,5 +173,48 @@ test('progress photo: an undecodable image reports an error and keeps the form u
   assert.equal(await page.evaluate(() => document.getElementById('dialog').open), true, 'dialog stays open so the user can pick another photo');
   assert.equal(await page.evaluate(() => document.querySelector('#growth-photo-form button[type="submit"]').disabled), false);
   assert.equal(await page.$$eval('[data-growth-gallery="plant_2"] article.growth-photo', (a) => a.length), 0);
+  await ctx.close();
+});
+
+test('unreadable saved data is preserved in a recovery slot instead of being overwritten', async () => {
+  const ctx = await browser.newContext(phoneContext());
+  const page = await ctx.newPage();
+  // completed: null passed the old validator but crashed render(); it must now be treated as unreadable.
+  const broken = { ...fixture, completed: null };
+  const seeded = JSON.stringify(broken);
+  const errors = await openApp(page, srv.url, { state: broken });
+  const warning = await page.textContent('#boot-warning');
+  assert.match(warning, /could not be read/);
+  const ls = await page.evaluate((key) => {
+    const out = { original: localStorage.getItem(key), slots: [] };
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k.startsWith(key + '.unreadable.')) out.slots.push(localStorage.getItem(k));
+    }
+    return out;
+  }, STORAGE_KEY);
+  assert.equal(ls.original, seeded, 'the main slot must not be overwritten at boot');
+  assert.deepEqual(ls.slots, [seeded], 'exactly one verbatim recovery copy');
+  assert.ok(await page.$('[data-action="download-unreadable"]'), 'download button offered');
+  // Reloading must reuse the existing copy, not add another one per launch.
+  await page.reload();
+  await page.waitForSelector('#view h1');
+  const slotCount = await page.evaluate((key) => [...Array(localStorage.length).keys()].map((i) => localStorage.key(i)).filter((k) => k.startsWith(key + '.unreadable.')).length, STORAGE_KEY);
+  assert.equal(slotCount, 1, 'one recovery copy, however many times the app is opened');
+  // The app itself still works with a fresh garden.
+  await tapTab(page, 'garden');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('a long-lived garden with more than 1500 journal entries still loads', async () => {
+  const ctx = await browser.newContext(phoneContext());
+  const page = await ctx.newPage();
+  const big = JSON.parse(JSON.stringify(fixture));
+  big.logs = Array.from({ length: 1600 }, (_, i) => ({ id: 'log_' + i, kind: 'Observation', title: 'Note ' + i, date: '2026-09-01', reviewDate: '', bedId: '', notes: 'n' }));
+  const errors = await openApp(page, srv.url, { state: big, hash: '#tasks' });
+  assert.equal(await page.evaluate(() => document.getElementById('boot-warning').hidden), true, 'no boot warning');
+  assert.equal(await page.evaluate(() => window.GardenForge.getState().logs.length), 1600);
+  assert.deepEqual(errors, []);
   await ctx.close();
 });
