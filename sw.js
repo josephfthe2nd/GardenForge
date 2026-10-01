@@ -1,6 +1,6 @@
 /* GardenForge: cache only this application, never external links or personal records. */
 'use strict';
-const PREFIX='gardenforge-mobile-'+encodeURIComponent(new URL(self.registration.scope).pathname)+'-';
+const PREFIX='gardenforge-v1.2-growth-journal'+encodeURIComponent(new URL(self.registration.scope).pathname)+'-';
 const CACHE=PREFIX+'v1.1.0';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))));
