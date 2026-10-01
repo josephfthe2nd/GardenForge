@@ -253,7 +253,7 @@ async function saveGrowthPhoto(form){const fd=new FormData(form),file=form.eleme
 
 // Phone interaction helpers. No analytics or cloud data transmission.
 const isPhone=()=>window.matchMedia('(max-width:850px)').matches;
-const APP_VERSION='1.2.0-growth-journal';
+const APP_VERSION='1.2.1-audit-fixes';
 const PAGES=['overview','mix','calendar','garden','tasks','reference'];
 let installPrompt=null, offlineReady=false, pendingFile=null, updateRegistration=null;
 const hostedBuild=document.documentElement.dataset.hosted==='true';
