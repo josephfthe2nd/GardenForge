@@ -1,0 +1,72 @@
+# GardenForge sync backend (PocketBase) - systemd unit.
+#
+# STATUS: NOT YET EXECUTED - verify on first install.
+#
+# install.sh copies this file to /etc/systemd/system/gardenforge-pocketbase.service and replaces
+# /opt/gardenforge and the user/group "gardenforge" with its --dir and --user values.
+#
+# Layout it expects (created by install.sh):
+#   /opt/gardenforge/bin/pocketbase     the PocketBase binary (root-owned, read-only to the service)
+#   /opt/gardenforge/pb_hooks/          server/pb_hooks from the repository (read-only)
+#   /opt/gardenforge/pb_migrations/     server/pb_migrations from the repository (read-only)
+#   /opt/gardenforge/pb_data/           database, uploaded photos, local backups (the ONLY writable dir)
+#   /etc/gardenforge/pocketbase.env     PB_HTTP and PB_ORIGINS (see server/env.example)
+#
+# Flags (PocketBase docs): --dir (going-to-production), --migrationsDir (js-migrations),
+# --http (going-to-production Dockerfile), --origins (js-routing, CORS), --automigrate
+# (js-migrations; off so dashboard edits never try to write migration files into the read-only
+# pb_migrations directory). --hooksDir is NOT described in the checked-out docs; install.sh
+# checks `pocketbase serve --help` for every flag used here before starting the service.
+#
+# systemd expands ${PB_HTTP} and ${PB_ORIGINS} from the EnvironmentFile.
+
+[Unit]
+Description=GardenForge sync backend (PocketBase)
+Documentation=https://pocketbase.io/docs/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=gardenforge
+Group=gardenforge
+EnvironmentFile=/etc/gardenforge/pocketbase.env
+WorkingDirectory=/opt/gardenforge
+ExecStart=/opt/gardenforge/bin/pocketbase serve --dir=/opt/gardenforge/pb_data --hooksDir=/opt/gardenforge/pb_hooks --migrationsDir=/opt/gardenforge/pb_migrations --http=${PB_HTTP} --origins=${PB_ORIGINS} --automigrate=false
+Restart=on-failure
+RestartSec=5s
+# going-to-production: raise the open-files limit
+LimitNOFILE=4096
+# Optional memory soft limit for small machines (going-to-production, "Set GOMEMLIMIT"):
+#Environment=GOMEMLIMIT=256MiB
+
+# --- Hardening ---------------------------------------------------------------------------------
+# If the service fails to start after an OS or PocketBase update, comment out one directive at a
+# time (MemoryDenyWriteExecute and SystemCallFilter are the usual suspects) and report it.
+NoNewPrivileges=true
+UMask=0027
+ProtectSystem=strict
+ReadWritePaths=/opt/gardenforge/pb_data
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

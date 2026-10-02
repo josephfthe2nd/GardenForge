@@ -1,0 +1,43 @@
+# cloudflared configuration for the GardenForge sync server (Cloudflare named tunnel).
+#
+# STATUS: NOT YET EXECUTED - verify on first install (server/cloudflared/README.md, step 6, shows
+# how to test each rule with `cloudflared tunnel ingress rule <url>` before going live).
+#
+# Copy to /etc/cloudflared/config.yml and replace:
+#   REPLACE-WITH-TUNNEL-UUID   the id printed by `cloudflared tunnel create gardenforge`
+#   api.example.com            your hostname (the DNS route you created)
+#
+# Rules are checked top to bottom; the first match wins; the last rule must be a catch-all.
+# `path` is a regular expression matched against the request path.
+#
+# Only the paths the GardenForge app uses are forwarded to PocketBase. Everything else returns
+# 404 at Cloudflare's edge, including:
+#   /_/                                         the PocketBase admin UI (use an SSH tunnel instead)
+#   /api/collections/_superusers/...            superuser sign-in
+#   /api/backups, /api/settings, /api/logs      administration
+#   /api/collections (collection management), /api/realtime, /api/batch
+#   /api/collections/users/records              (sign-up; also closed on the server)
+#   /api/gf/admin/...                           the superuser-only maintenance route
+# A plain `path: ^/api/` would also forward the superuser API above, which is why the list is
+# explicit. It must stay identical to TUNNEL_PATHS in server/pb_hooks/gardenforge_lib.js, which
+# enforces the same list inside PocketBase as a second layer.
+#
+# Paths forwarded (one regular expression):
+#   /api/health                                         health check
+#   /api/gf/sync/push | pull | status                   the sync API
+#   /api/collections/users/auth-with-password           owner sign-in
+#   /api/collections/users/auth-refresh                 session refresh
+#   /api/collections/gf_records/records[/<id>]          read-only record list/view
+#   /api/collections/gf_conflicts/records[/<id>]        conflict list/view, mark resolved
+#   /api/collections/gf_photos/records[/<id>]           photo list/view/upload
+#   /api/files/token                                    short-lived token for protected photos
+#   /api/files/gf_photos/<recordId>/<filename>          photo download (with ?token=)
+
+tunnel: REPLACE-WITH-TUNNEL-UUID
+credentials-file: /etc/cloudflared/REPLACE-WITH-TUNNEL-UUID.json
+
+ingress:
+  - hostname: api.example.com
+    path: '^/api/(health|gf/sync/(push|pull|status)|collections/users/auth-(with-password|refresh)|collections/gf_(records|conflicts|photos)/records(/[A-Za-z0-9]+)?|files/token|files/gf_photos/[A-Za-z0-9]+/[^/]+)$'
+    service: http://127.0.0.1:8090
+  - service: http_status:404
