@@ -1,6 +1,6 @@
 # GardenForge Mobile
 
-Version 1.1.0-mobile • Brownsville, Texas • October 1, 2026
+Version 1.2.2-audit-fixes • Brownsville, Texas • October 1, 2026
 
 ## Start here: iPhone use
 
@@ -40,12 +40,14 @@ Export JSON from the original app, then use More → Backup & restore → Import
 
 A different browser, address or separate Home Screen app may use a different storage area. Import a backup rather than assuming data will appear automatically. Save periodic backups to Files or another location you control. Browser storage is not permanent archival storage.
 
+**Progress photos are not yet included in JSON backups, the portable HTML copy or the copy/paste backup.** They live only in this browser's IndexedDB. A backup that includes photos is the first item in `docs/ROADMAP.md`; until it ships, treat photos as unbacked-up.
+
 A portable HTML export contains your private garden records. Do not publish that export as your public site. The supplied `index.html` starts with no personal beds, plans or journal entries.
 
 ## What stayed unchanged
 
 - Eight editable soil templates and the ingredient palette from the previous app.
-- 31 regional vegetable/herb records and the previous local sources.
+- 53 sourced vegetable/herb records (44 with Lower Rio Grande Valley planting windows, 9 herbs with no regional window entered) and 6 flower templates, plus the previous local sources. The regional rows still need a row-by-row check against the cited guide; see `docs/AUDIT-2026-10.md`.
 - Custom flowers/crops, bed geometry, crop succession, journals and calendar-file export.
 - Fertilizer rates start at zero; the app scales entered rates, not agronomic recommendations.
 - The app still distinguishes mineral garden beds, containers and seed-starting media.
@@ -59,7 +61,11 @@ A portable HTML export contains your private garden records. Do not publish that
 `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` — app icons.
 `vercel.json` — optional Vercel cache/header configuration.
 `.nojekyll` — allows plain-file publishing with GitHub Pages.
-`TESTING.md` — verification scope and limitations.
+`TESTING.md` — the original verification record.
+`AGENTS.md` — conventions for people and AI agents changing this repository.
+`docs/` — audit, roadmap, sync architecture decision, data model and migration plan.
+`tools/` — development-only test harness (`cd tools && npm install && npm test`); not deployed.
+`.vercelignore` — keeps `docs/`, `tools/` and the Markdown files out of the deployed site.
 
 To test on a desktop with Python, run `python -m http.server 8000` in this directory and open `http://localhost:8000`. This is local development only, not a live link accessible from your phone. Use HTTPS hosting for phone installation and offline-worker support.
 

@@ -1,0 +1,8 @@
+{"schemaVersion":1,"updatedAt":"2026-09-30T12:00:00.000Z","settings":{"name":"Test garden","zone":"10a"},
+"draft":{"presetId":"living","name":"Living vegetable containers","type":"Container","description":"d","parts":{"peat":40,"compost":15,"perlite":25},"target":10,"unit":"gal","rates":{},"enrichedBio":null,"enrichedZeo":null,"notes":""},
+"recipes":[],
+"beds":[{"id":"bed_a","name":"Bed A","type":"Raised bed","length":8,"width":4,"depth":12,"light":"6 or more hours","notes":""}],
+"plans":[{"id":"plant_1","cropId":"tomato","cropName":"Tomato","group":"Vegetable","variety":"Celebrity","count":4,"bedId":"bed_a","date":"2026-02-20","mode":"transplant","leadWeeks":6,"harvestMin":90,"harvestMax":120,"notes":"","mixId":"","mixName":"","status":"planted"},
+{"id":"plant_2","cropId":"okra","cropName":"Okra","group":"Vegetable","variety":"","count":6,"bedId":"bed_a","date":"2026-03-01","mode":"direct","leadWeeks":6,"harvestMin":100,"harvestMax":120,"notes":"","mixId":"","mixName":"","status":"planned"}],
+"logs":[{"id":"log_1","kind":"Observation","title":"First note","date":"2026-09-01","reviewDate":"","bedId":"bed_a","notes":"Hello"}],
+"completed":{},"customCrops":[],"customIngredients":[]}

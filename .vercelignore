@@ -1,0 +1,6 @@
+# Development-only material: keep it out of the deployed static site.
+docs
+tools
+AGENTS.md
+TESTING.md
+README.md
