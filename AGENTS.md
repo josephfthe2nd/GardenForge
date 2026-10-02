@@ -21,7 +21,7 @@ journal, and a timestamped plant-progress photo journal.
 | `vercel.json` | Cache headers only. `/sw.js` is `no-store`, `/index.html` is `no-cache`. |
 | `.vercelignore` | Keeps `docs/`, `tools/` and the Markdown files out of the deployed site. |
 | `tools/` | Development-only test harness (node:test + Playwright). See `tools/README.md`. |
-| `docs/` | Audit, roadmap, sync architecture decision, data model, migration plan. |
+| `docs/` | Audit, roadmap, sync architecture decision, data model, migration plan, AI camera design (`AI-CAMERA.md`, with its backing files in `docs/ai-camera/`). |
 | `README.md`, `TESTING.md` | User-facing install notes and the original test record. |
 
 The repository root deliberately has **no `package.json`**. Vercel treats a root `package.json` as a

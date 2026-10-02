@@ -73,10 +73,14 @@ No paid infrastructure is involved; Supabase remains the documented fallback.
 
 ## Phase 4: AI camera and scanning (feature 6)
 
-Only after sync exists, because it needs a server that holds the API key: a Vercel Function that receives
-a photo plus context (crop, variety, age, stage, soil recipe, fertilization history, symptoms, previous
-photos) and returns probabilistic identifications with stated uncertainty. Rate limits and a monthly cost
-cap on the server side; no key in client code.
+Design: `docs/AI-CAMERA.md`. A PocketBase hook on the owner's server, `POST /api/gf/ai/analyze` with
+`GET /api/gf/ai/status`, behind the same tunnel allowlist and owner sign-in as sync. One check sends 1 to 5
+photos (guided: 3 photos of different parts of the plant, chosen per mode) plus a visible summary of the
+planting's records, and returns a structured AI estimate with stated uncertainty, no products or rates, and a
+pointer to AgriLife Extension. The provider key lives only in `/etc/gardenforge/ai.env` on the server; the
+monthly spend cap and per-minute limit are enforced on the server in `gf_ai_usage`. Needs the server verified
+and the client sign-in (Phase 3 client phase 1); it does not need metadata or photo sync. Photos taken for AI
+checks are not backed up until Phase 1 item 1 ships.
 
 ## Parallel track: horticultural data review (owner, with the source documents)
 

@@ -12,6 +12,7 @@ on a real iPhone or in WebKit before anyone relies on them.
 | --- | --- | --- | --- |
 | 1 | none | shipped | One JSON document in `localStorage["gardenforge.brownsville.v1"]`; photos in IndexedDB `gardenforge.photos.v1`. `e1e56e1`/`ce869ef` raised the per-collection cap from 1500 to 20,000, added the `completed`/`draft.rates` object checks and the `.unreadable.<timestamp>` recovery slots. No migration: every earlier backup stays valid. |
 | 2 | `m1` | planned | Records with sync envelopes in IndexedDB `gardenforge.v2`; events, individual plants, content-addressed photo assets; photos included in full archives. This document. |
+| 1 (no bump) | none | planned | AI camera (`docs/AI-CAMERA.md` section 4): optional fields on v1 photo records (`captureSetId`, `shotIndex`, `shotSlot`, …) and on journal entries (`planId`, `captureSetId`, `ai`), settings keys `aiConsent*`, and the device-local key `gardenforge.aiPending.v1`. No `schemaVersion` change; `validateState` neither rejects nor rewrites a document because of them; old builds ignore them. |
 
 ## 1. Principles
 
@@ -384,6 +385,9 @@ created in v2 have no `legacy`, so they project from `v1Fields` alone.
 - The bytes stay in the v1 database until P7 copies them, byte for byte, into `blobs`. Nothing is
   re-encoded.
 - The v1 database is not modified or deleted by migration.
+- Photos taken for AI checks follow the same rule, one event per v1 photo record, never merged; their
+  `captureSetId` grouping, the `ai_assessment` mapping for journal entries that carry an `ai` object and the
+  projection back to v1 are in `docs/AI-CAMERA.md` section 4.8.
 
 ### 7.2 Timestamps
 

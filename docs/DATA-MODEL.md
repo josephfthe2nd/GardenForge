@@ -576,7 +576,16 @@ Common to all types: `title`, `notes`, `photoAssetIds`, `stageObserved`, `follow
 
 **`photo`**: a photo session. Payload `{}`. Requires at least one `photoAssetIds` entry.
 Scopes: plant, planting, space, garden. If something was measured at the same time, use
-`measurement` with photos attached instead.
+`measurement` with photos attached instead. A guided AI capture (`docs/AI-CAMERA.md` section 4.7) is a
+`photo` event whose `photoAssetIds` are in the order the photos were sent, with payload
+`{captureSetId, shots: [{slot, index, scaleRef, shotNote}]}`.
+
+**`ai_assessment`** (planned with the AI camera; full definition in `docs/AI-CAMERA.md` sections 4.7 and 7).
+Scopes: planting, plant. The stored result of one AI check: provider, model, prompt version, the
+`gf-assessment-1` answer (at most 8,192 bytes), the context that was sent, the sanitizer report, usage and
+the owner's feedback. Rules: it never creates or edits a `pest_observation` or `disease_observation` by
+itself, its feedback never sets `labConfirmed`, and it carries no product, rate or dose. Builds that do not
+know the type show it as a generic note (6.5).
 
 **`measurement`**. Scopes: plant (preferred), planting.
 - `measures` (required, 1 to 20): `{metric, label?, value, unit, rawText?, method?}`.
@@ -724,6 +733,7 @@ entries and unknown v1 kinds become notes.
 | `Soil / media test` | `soil_test` | `legacy-text` |
 | `Mix batch` | `mix_batch` | `legacy-text` |
 | `Compost` | `compost` | `legacy-text` |
+| any kind, when the entry carries a valid `ai` object (an AI estimate, `docs/AI-CAMERA.md` 4.2) | `ai_assessment` | `complete` |
 | anything else | `note` | `legacy-text` |
 
 The original kind stays in `legacy.v1.kind` and is what the v1 screens show. The payload stays `{}`.
@@ -905,6 +915,8 @@ gets the same order.
 | `customcrop_` | custom crop | v1 and v2. |
 | `ingredient_` | custom ingredient | v1 and v2. |
 | `dev_` | device | v2. |
+| `cset_` | (not a record) | AI capture-set grouping key on photo records and events (`docs/AI-CAMERA.md` 4.1). |
+| `aireq_` | (not a record) | AI request id, one per paid attempt (`docs/AI-CAMERA.md` 5.7). |
 
 New ids are `prefix + '_' + crypto.randomUUID()` (or the v1 fallback when `randomUUID` is missing).
 Prefixes are for people reading data. **Validation never rejects an id because of its shape**; the

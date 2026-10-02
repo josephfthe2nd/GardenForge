@@ -1,0 +1,92 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "mode", "imageQuality", "candidates", "observations", "healthSummary",
+               "overallUncertainty", "cannotTellReason", "notVisible", "contextConflicts", "nextChecks",
+               "retakeAdvice", "answerToQuestion"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "gf-assessment-1" },
+    "mode": { "type": "string", "enum": ["identify_plant", "identify_pest_or_disease", "assess_health"] },
+    "imageQuality": {
+      "type": "array",
+      "description": "One entry per image label sent, in the order sent. At most 6.",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["imageLabel", "usable", "showsRequestedView", "issues"],
+        "properties": {
+          "imageLabel": { "type": "string", "enum": ["Image 1", "Image 2", "Image 3", "Image 4", "Image 5", "Reference R1"] },
+          "usable": { "type": "string", "enum": ["good", "limited", "unusable"] },
+          "showsRequestedView": { "type": "boolean", "description": "False when the image does not show the view its label asked for." },
+          "issues": { "type": "array", "description": "At most 3.", "items": { "type": "string",
+            "enum": ["blurry", "too_dark", "overexposed", "glare", "too_far", "too_close", "subject_cut_off",
+                     "subject_not_plant", "obstructed", "low_resolution", "duplicate_view"] } }
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "description": "0 to 3, most likely first. Empty when nothing can be told.",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "scientificName", "kind", "confidence", "visualEvidence", "wouldConfirm", "wouldRuleOut", "lookalikes"],
+        "properties": {
+          "name": { "type": "string", "description": "Common name, at most 80 characters." },
+          "scientificName": { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "At most 80 characters; null if unsure." },
+          "kind": { "type": "string", "enum": ["plant", "insect_or_mite", "other_animal", "fungus_or_oomycete", "bacterium", "virus",
+                                               "nutrient_disorder", "abiotic_or_environmental", "cultural_or_care", "unknown"] },
+          "confidence": { "type": "number", "description": "0 to 1, your own estimate from these photos and records only. Not a calibrated probability." },
+          "visualEvidence": { "type": "array", "description": "1 to 4 items.", "items": {
+            "type": "object", "additionalProperties": false, "required": ["imageLabel", "feature"],
+            "properties": {
+              "imageLabel": { "type": "string", "enum": ["Image 1", "Image 2", "Image 3", "Image 4", "Image 5", "Reference R1"] },
+              "feature": { "type": "string", "description": "What is visible, at most 160 characters." } } } },
+          "wouldConfirm": { "type": "array", "description": "0 to 3 checks, at most 160 characters each.", "items": { "type": "string" } },
+          "wouldRuleOut": { "type": "array", "description": "0 to 3 checks, at most 160 characters each.", "items": { "type": "string" } },
+          "lookalikes": { "type": "array", "description": "0 to 3 names, at most 80 characters each.", "items": { "type": "string" } }
+        }
+      }
+    },
+    "observations": {
+      "type": "array", "description": "0 to 6.",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["imageLabel", "part", "finding"],
+        "properties": {
+          "imageLabel": { "type": "string", "enum": ["Image 1", "Image 2", "Image 3", "Image 4", "Image 5", "Reference R1"] },
+          "part": { "type": "string", "enum": ["whole_plant", "leaf_upper", "leaf_underside", "new_growth", "stem", "stem_base_or_crown",
+                                               "flower", "fruit", "root", "soil_or_mulch", "surroundings", "other"] },
+          "finding": { "type": "string", "description": "At most 200 characters." }
+        }
+      }
+    },
+    "healthSummary": {
+      "anyOf": [{ "type": "null" }, {
+        "type": "object", "additionalProperties": false, "required": ["status", "summary"],
+        "properties": {
+          "status": { "type": "string", "enum": ["looks_healthy", "minor_concerns", "needs_attention", "cannot_tell"] },
+          "summary": { "type": "string", "description": "At most 300 characters." } } }],
+      "description": "An object for assess_health; null for the other modes."
+    },
+    "overallUncertainty": { "type": "string", "enum": ["low", "moderate", "high", "cannot_tell"] },
+    "cannotTellReason": { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "At most 300 characters. A string when overallUncertainty is cannot_tell." },
+    "notVisible": { "type": "array", "description": "0 to 5 things the photos could not show, at most 160 characters each.", "items": { "type": "string" } },
+    "contextConflicts": { "type": "array", "description": "0 to 3 places where the photos disagree with the garden record, at most 200 characters each.", "items": { "type": "string" } },
+    "nextChecks": {
+      "type": "array", "description": "0 to 5.",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["check", "why"],
+        "properties": {
+          "check": { "type": "string", "description": "At most 160 characters. An observation, photo or test; never a product, rate or dose." },
+          "why": { "type": "string", "description": "At most 160 characters." } } }
+    },
+    "retakeAdvice": {
+      "type": "array", "description": "0 to 3 photos that would help: a retake of a slot that was sent, or a slot that was not sent.",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["slot", "reason"],
+        "properties": {
+          "slot": { "type": "string", "enum": ["whole_plant", "leaf_detail", "flower_or_fruit", "leaf_underside", "affected_closeup",
+                                               "stem_soil_line", "pest_closeup", "new_growth", "old_leaves", "extra"] },
+          "reason": { "type": "string", "description": "At most 160 characters." } } }
+    },
+    "answerToQuestion": { "anyOf": [{ "type": "string" }, { "type": "null" }], "description": "At most 500 characters; null when no question was asked." }
+  }
+}

@@ -63,7 +63,7 @@ A portable HTML export contains your private garden records. Do not publish that
 `.nojekyll` — allows plain-file publishing with GitHub Pages.
 `TESTING.md` — the original verification record.
 `AGENTS.md` — conventions for people and AI agents changing this repository.
-`docs/` — audit, roadmap, sync architecture decision, data model and migration plan.
+`docs/` — audit, roadmap, sync architecture decision, data model, migration plan and AI camera design.
 `tools/` — development-only test harness (`cd tools && npm install && npm test`); not deployed.
 `.vercelignore` — keeps `docs/`, `tools/` and the Markdown files out of the deployed site.
 
