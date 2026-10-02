@@ -30,8 +30,13 @@ After reading the comparison the owner chose to **self-host the backend** rather
 accept a free project that pauses. This section records that decision; sections 1 to 8 below are the comparison
 it was made from and stay as written.
 
-**What changes.** Only the server. The client sync engine, local change log, push/pull protocol, conflict rule,
-content-addressed photo pipeline and sync-state machine in section 4 are unchanged. The server is
+**What changes.** The server, and one simplification of the conflict rule. The client sync engine, local change
+log, push/pull shape, content-addressed photo pipeline and sync-state machine in section 4 stay as described.
+The conflict rule the server implements is the one `docs/DATA-MODEL.md` section 9.3 specifies: whole-record
+last-writer-wins by the client clock string, with the losing version always written to a conflicts collection in
+the same transaction and surfaced as "Needs attention". The field-level merge sketched in section 4.6 is not
+implemented; `server/README.md` section 10 lists every difference from section 4 so the client work can settle
+them before it starts. The server is
 [PocketBase](https://pocketbase.io): one Go binary with SQLite, built-in email/password auth, file storage on the
 server's own disk, an admin UI, and JavaScript hooks that implement the same `sync/push`, `sync/pull` and
 `sync/status` endpoints described in section 4.5. Photos are files under the server's data directory, keyed by

@@ -884,6 +884,10 @@ gets the same order.
 
 ## 10. Id prefixes
 
+> Server note: the self-hosted sync server (`server/`) requires a record id to be unique per owner across all
+> types, up to 200 characters. Every id carries a type-specific prefix, so this holds for migrated v1 ids and new
+> ids alike; a client must never reuse an id for a different type.
+
 | Prefix | Type | Issued by |
 | --- | --- | --- |
 | `gdn_default` | garden | Migration (deterministic). New gardens: `gdn_<uuid>`. |
