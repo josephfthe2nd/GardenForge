@@ -19,9 +19,10 @@ const TYPES = {
 };
 
 /** Serve the repository root on a random localhost port. Resolves to { server, url }. */
-export function startServer() {
+export function startServer({ handleRequest } = {}) {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
+      if (handleRequest?.(req, res)) return;
       let p = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
       if (p === '/') p = '/index.html';
       const file = path.join(ROOT, p);

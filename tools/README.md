@@ -25,6 +25,10 @@ npm run serve                     # serve the repo root on a random localhost po
   arithmetic through `window.GardenForge.calculations`; checks `validateState`; saves a progress
   photo end to end, guards against the former gallery refresh loop and blob URL leak, and checks
   the error path for an undecodable image.
+- `tests/worker.test.mjs` — activates an updated worker over an existing controller at root and
+  subdirectory scopes, removes both historical cache namespaces without touching sibling scopes,
+  and checks offline shell/assets plus saved garden and photo persistence. Unrelated caches with
+  the same URLs cannot supply stale responses when the current cache is missing an entry.
 
 Tests run in Chromium. They catch logic and layout regressions; iOS/WebKit-specific behaviour
 still needs a real iPhone (see `TESTING.md` and `docs/AUDIT-2026-10.md`).

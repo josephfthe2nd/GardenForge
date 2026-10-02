@@ -1,6 +1,6 @@
 # GardenForge Mobile
 
-Version 1.2.1-audit-fixes • Brownsville, Texas • October 1, 2026
+Version 1.2.2-audit-fixes • Brownsville, Texas • October 1, 2026
 
 ## Start here: iPhone use
 
