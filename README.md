@@ -1,6 +1,6 @@
 # GardenForge Mobile
 
-Version 1.3.2-gallery-fix-dev • Brownsville, Texas • October 1, 2026
+Version 1.3.3-scan-results-dev • Brownsville, Texas • October 1, 2026
 
 ## Start here: iPhone use
 

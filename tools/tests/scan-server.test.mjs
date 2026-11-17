@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {handleScan,validateInput,validateResult,MODELS} from '../../server/scan.mjs';
+import {readFileSync} from 'node:fs';
+import {handleScan,validateInput,validateResult,MODELS,BUILD_VERSION} from '../../server/scan.mjs';
 const analysis={identification:'Tomato',scientificName:'Solanum lycopersicum',confidence:.9,uncertain:false,health:'good',summary:'Visible leaves appear intact.',observations:['Green leaves'],possibleCauses:[],nextSteps:['Monitor'],followUpPhotos:[]};
 const jpeg='/9j/AAAA';
 const input=()=>({images:[{mediaType:'image/jpeg',data:jpeg}],plant:'Tomato',stage:'Seedling',notes:'',escalate:true,plantnet:false,disease:false});
@@ -35,3 +36,19 @@ test('malformed care degrades safely without losing the health result; context v
  const r=await handleScan(req(),env,async()=>response({...analysis,care:{watering:'x'.repeat(9000)}}));assert.equal(r.status,200);assert.ok((await r.json()).analysis.care.wateringCheck);
  for(const change of [{gardenZone:'<script>'},{gardenZone:'14a'},{growingLocation:'http://private'}])assert.throws(()=>validateInput({...input(),...change}));
 });
+
+test('every model request uses constrained JSON output with required scan and care fields',async()=>{
+ let calls=0;const r=await handleScan(req(),env,async(u,o)=>{calls++;const f=JSON.parse(o.body).output_config.format;assert.equal(f.type,'json_schema');assert.equal(f.schema.additionalProperties,false);assert.ok(f.schema.required.includes('scientificName'));assert.ok(f.schema.required.includes('care'));assert.deepEqual(f.schema.properties.health.enum,['good','concern','uncertain']);assert.equal(f.schema.properties.care.additionalProperties,false);assert.ok(!/"(?:maxLength|minimum|maximum|maxItems)":/.test(JSON.stringify(f.schema)));return response({...analysis,confidence:.5});});assert.equal(r.status,200);assert.equal(calls,2);
+});
+test('invalid Haiku output reaches enabled Sonnet review once and accounts for failed usage',async()=>{
+ for(const first of [response({...analysis,scientificName:null}),Response.json({content:[{type:'text',text:'broken JSON'}],usage:{input_tokens:50,output_tokens:10}}),Response.json({stop_reason:'max_tokens',content:[],usage:{input_tokens:50,output_tokens:10}})]){
+  const models=[];const r=await handleScan(req(),env,async(u,o)=>{models.push(JSON.parse(o.body).model);return models.length===1?first:response();});const data=await r.json();assert.equal(r.status,200);assert.deepEqual(models,[MODELS.primary,MODELS.escalation]);assert.equal(data.escalated,true);assert.equal(data.initialAnalysis,null);assert.equal(data.attempts.length,2);assert.equal(data.attempts[0].status,'invalid-format');assert.match(data.warnings[0],/unusable response/);assert.equal(data.analysis.identification,'Tomato');
+ }
+});
+test('format recovery respects review opt-out and never retries provider refusals',async()=>{
+ let calls=0;let r=await handleScan(req({...input(),escalate:false}),env,async()=>{calls++;return response({...analysis,nextSteps:null});});assert.equal(r.status,502);assert.equal(calls,1);
+ calls=0;r=await handleScan(req(),env,async()=>{calls++;return Response.json({stop_reason:'refusal',content:[{type:'text',text:'private refusal text'}]});});assert.equal(r.status,422);assert.equal(calls,1);assert.ok(!(await r.text()).includes('private refusal text'));
+});
+test('health enum casing is normalized without guessing invalid values',()=>{assert.equal(validateResult({...analysis,health:'Good'}).health,'good');assert.equal(validateResult({...analysis,health:' CONCERN '}).health,'concern');assert.throws(()=>validateResult({...analysis,health:'perfect'}));assert.throws(()=>validateResult({...analysis,confidence:80}));});
+
+test('server release version matches the frontend update indicator',()=>{const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');assert.equal(html.match(/const APP_VERSION='([^']+)'/)[1],BUILD_VERSION);});

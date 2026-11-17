@@ -7,8 +7,28 @@ const reply = (data, status = 200) => Response.json(data, { status, headers: { '
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 const str = (v, max = 2000) => typeof v === 'string' && v.length <= max;
 const list = (v) => Array.isArray(v) && v.length <= 12 && v.every(x => str(x));
+export const BUILD_VERSION='1.3.3-scan-results-dev';
+const textField=(description)=>({type:'string',description});
+const textList={type:'array',items:{type:'string'},description:'At most 6 concise strings, each under 1500 characters. Use [] when there are none.'};
+const careKeys=['watering','wateringCheck','wateringMethod','sunlight','soil','feeding','seasonal'];
+export const SCAN_RESULT_SCHEMA={type:'object',additionalProperties:false,properties:{
+ identification:textField('Common name or an honest unknown identification; under 300 characters.'),
+ scientificName:textField('Scientific name under 300 characters; empty string if unknown, never null.'),
+ confidence:{type:'number',description:'Uncalibrated estimate between 0 and 1 inclusive, not a percentage.'},
+ uncertain:{type:'boolean'},health:{type:'string',enum:['good','concern','uncertain']},
+ summary:textField('Concise visual assessment, under 1500 characters.'),
+ observations:textList,possibleCauses:textList,nextSteps:textList,followUpPhotos:textList,
+ care:{type:'object',additionalProperties:false,properties:Object.fromEntries(careKeys.map(k=>[k,textField('Tentative '+k+' guidance; under 600 characters. State uncertainty if unknown.')])),required:careKeys}
+},required:['identification','scientificName','confidence','uncertain','health','summary','observations','possibleCauses','nextSteps','followUpPhotos','care']};
+const formatFail=(message,fields=[])=>Object.assign(fail(message,502),{code:'INVALID_ANALYSIS',fields});
+
 export function validateResult(r) {
-  if (!r || typeof r !== 'object' || !str(r.identification, 300) || !str(r.scientificName, 300) || !Number.isFinite(r.confidence) || r.confidence < 0 || r.confidence > 1 || typeof r.uncertain !== 'boolean' || !['good', 'concern', 'uncertain'].includes(r.health) || !str(r.summary) || !list(r.observations) || !list(r.possibleCauses) || !list(r.nextSteps) || !list(r.followUpPhotos)) throw fail('The model returned an incomplete analysis. Your photos are still saved; try again.', 502);
+  if(!r||typeof r!=='object'||Array.isArray(r))throw formatFail('The AI response could not be read. Your saved photos are ready to retry.',['analysis']);
+  // Enum capitalization is not guaranteed even with constrained output. Do not guess other values.
+  r={...r,health:typeof r.health==='string'?r.health.trim().toLowerCase():r.health};
+  const checks={identification:str(r.identification,300),scientificName:str(r.scientificName,300),confidence:Number.isFinite(r.confidence)&&r.confidence>=0&&r.confidence<=1,uncertain:typeof r.uncertain==='boolean',health:['good','concern','uncertain'].includes(r.health),summary:str(r.summary),observations:list(r.observations),possibleCauses:list(r.possibleCauses),nextSteps:list(r.nextSteps),followUpPhotos:list(r.followUpPhotos)};
+  const fields=Object.keys(checks).filter(k=>!checks[k]);
+  if(fields.length)throw formatFail('The AI response was missing usable scan details. Your saved photos are ready to retry.',fields);
   // Select only documented fields. Model text is always rendered as escaped text by the client.
   const result = Object.fromEntries(['identification','scientificName','confidence','uncertain','health','summary','observations','possibleCauses','nextSteps','followUpPhotos'].map(k => [k,r[k]]));
   const care=cleanModelCare(r.care);if(care)result.care=care;
@@ -39,13 +59,25 @@ async function claude(input, model, env, fetcher, specialist) {
   const content = input.images.flatMap((p,i)=>[{type:'text',text:`Photo ${i+1}`},{type:'image',source:{type:'base64',media_type:p.mediaType,data:p.data}}]);
   content.push({type:'text',text:JSON.stringify({plant:input.plant,stage:input.stage,notes:input.notes,growingContext:{location:'Brownsville, Texas',gardenZone:input.gardenZone||'',growingLocation:input.growingLocation||'unspecified'},specialist})});
   let res;
-  try {res=await fetcher('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:3500,system,messages:[{role:'user',content}]}),signal:AbortSignal.timeout(55000)});} catch {throw fail('The AI service timed out or could not be reached. Your photos are saved for retry.',504);}
+  try {res=await fetcher('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:3500,system,output_config:{format:{type:'json_schema',schema:SCAN_RESULT_SCHEMA}},messages:[{role:'user',content}]}),signal:AbortSignal.timeout(55000)});} catch {throw fail('The AI service timed out or could not be reached. Your photos are saved for retry.',504);}
   if(!res.ok) throw fail(res.status===429?'The AI service is busy or at its usage limit. Retry later.':'The AI provider could not complete this scan. Check the server API key, model access and billing.',res.status===429?429:502);
   let data;try{data=await res.json();}catch{throw fail('The AI service returned an unreadable response.',502);}
-  const text=(data.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('').trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');
-  if(data.stop_reason==='max_tokens')throw fail('The AI response was cut short. Please retry.',502);
-  let parsed;try{parsed=JSON.parse(text);}catch{throw fail('The AI service returned an incomplete analysis. Please retry.',502);}
-  return {analysis:validateResult(parsed),model,usage:{inputTokens:Number(data.usage?.input_tokens)||0,outputTokens:Number(data.usage?.output_tokens)||0}};
+  const usage={inputTokens:Number(data.usage?.input_tokens)||0,outputTokens:Number(data.usage?.output_tokens)||0};
+  if(data.stop_reason==='refusal')throw Object.assign(fail('The AI could not assess these photos. Try clearer plant-only photos or different context.',422),{code:'MODEL_REFUSAL'});
+  try{
+    if(data.stop_reason==='max_tokens')throw formatFail('The AI response was cut short. Your saved photos are ready to retry.',['response']);
+    const text=(Array.isArray(data.content)?data.content:[]).filter(x=>x.type==='text'&&typeof x.text==='string').map(x=>x.text).join('').trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');
+    let parsed;try{parsed=JSON.parse(text);}catch{throw formatFail('The AI response could not be read. Your saved photos are ready to retry.',['json']);}
+    return {analysis:validateResult(parsed),model,usage};
+  }catch(e){
+    if(e.code==='INVALID_ANALYSIS'){
+      e.attempt={model,usage,status:'invalid-format'};
+      // Fixed field names only: never record model text, photos, notes, keys, or user identity.
+      console.warn(JSON.stringify({event:'scan_response_invalid',model,fields:e.fields,stopReason:['end_turn','max_tokens','stop_sequence','tool_use','pause_turn'].includes(data.stop_reason)?data.stop_reason:'unknown'}));
+    }
+    throw e;
+  }
+
 }
 async function plantnet(input, env, fetcher, disease) {
   const form=new FormData();
@@ -61,7 +93,7 @@ export async function handleScan(request, env, fetcher=fetch) {
   const url=new URL(request.url);
   if(!url.pathname.startsWith('/api/scan'))return null;
   if(!request.headers.get('oai-authenticated-user-id'))return reply({error:'Sign in to GardenForge to use cloud analysis.'},401);
-  if(url.pathname==='/api/scan/config' && request.method==='GET') return reply({available:!!env.ANTHROPIC_API_KEY,plantnet:!!env.PLANTNET_API_KEY,primary:env.ANTHROPIC_HAIKU_MODEL||MODELS.primary,escalation:env.ANTHROPIC_SONNET_MODEL||MODELS.escalation});
+  if(url.pathname==='/api/scan/config' && request.method==='GET') return reply({available:!!env.ANTHROPIC_API_KEY,plantnet:!!env.PLANTNET_API_KEY,appVersion:BUILD_VERSION,primary:env.ANTHROPIC_HAIKU_MODEL||MODELS.primary,escalation:env.ANTHROPIC_SONNET_MODEL||MODELS.escalation});
   if(url.pathname!=='/api/scan')return reply({error:'Not found.'},404);
   if(request.method!=='POST')return reply({error:'Use POST.'},405);
   if(request.headers.get('origin')!==url.origin)return reply({error:'Scan requests must come from this GardenForge Site.'},403);
@@ -77,11 +109,18 @@ export async function handleScan(request, env, fetcher=fetch) {
       if(!env.PLANTNET_API_KEY){warnings.push('Pl@ntNet is not configured; this check was skipped.');continue;}
       try{specialist.push(await plantnet(input,env,fetcher,disease));}catch{warnings.push(`Pl@ntNet ${disease?'disease':'identification'} check was unavailable; Claude analysis continued.`);}
     }
-    const first=await claude(input,env.ANTHROPIC_HAIKU_MODEL||MODELS.primary,env,fetcher,specialist);
-    let final=first,escalated=false;const attempts=[{model:first.model,usage:first.usage}];
-    const needsReview=first.analysis.uncertain||first.analysis.confidence<0.75||first.analysis.health==='uncertain';
-    if(needsReview&&input.escalate){try{final=await claude(input,env.ANTHROPIC_SONNET_MODEL||MODELS.escalation,env,fetcher,specialist);escalated=true;attempts.push({model:final.model,usage:final.usage});}catch{warnings.push('Sonnet review could not complete. Showing the uncertain Haiku result; review is still needed.');}}
+    let first=null,final,escalated=false;const attempts=[];
+    try{first=await claude(input,env.ANTHROPIC_HAIKU_MODEL||MODELS.primary,env,fetcher,specialist);attempts.push({model:first.model,usage:first.usage});final=first;}
+    catch(e){
+      if(e.code!=='INVALID_ANALYSIS'||!input.escalate)throw e;
+      attempts.push(e.attempt);
+      final=await claude(input,env.ANTHROPIC_SONNET_MODEL||MODELS.escalation,env,fetcher,specialist);
+      escalated=true;attempts.push({model:final.model,usage:final.usage});
+      warnings.push('Haiku returned an unusable response. Sonnet completed this scan using your enabled review option.');
+    }
+    const needsReview=first&&(first.analysis.uncertain||first.analysis.confidence<0.75||first.analysis.health==='uncertain');
+    if(needsReview&&input.escalate){try{final=await claude(input,env.ANTHROPIC_SONNET_MODEL||MODELS.escalation,env,fetcher,specialist);escalated=true;attempts.push({model:final.model,usage:final.usage});}catch(e){if(e.attempt)attempts.push(e.attempt);warnings.push('Sonnet review could not complete. Showing the uncertain Haiku result; review is still needed.');}}
     final={...final,analysis:{...final.analysis,care:enrichCare(final.analysis,input)}};
-    return reply({schemaVersion:1,...final,initialAnalysis:escalated?first.analysis:null,escalated,needsReview:final.analysis.uncertain||final.analysis.confidence<0.75||final.analysis.health==='uncertain',specialist,warnings,attempts,createdAt:new Date().toISOString()});
+    return reply({schemaVersion:1,...final,initialAnalysis:escalated&&first?first.analysis:null,escalated,needsReview:final.analysis.uncertain||final.analysis.confidence<0.75||final.analysis.health==='uncertain',specialist,warnings,attempts,createdAt:new Date().toISOString()});
   }catch(e){return reply({error:e.status?e.message:'Scan could not complete. Your saved photos are unaffected.'},e.status||500);}
 }
