@@ -808,3 +808,17 @@ independent IndexedDB `gardenforge.scans.v1`, version 1, store `scans`, with per
 readable by earlier builds. Scan and progress-photo archives are separate, versioned formats with
 add-only import; duplicate IDs preserve the stored record. See `AI-PLANT-SCAN.md` for format,
 origin-transfer and size limitations. Rolling back code leaves scan data untouched.
+
+
+## Plant care dashboard (1.3.1 development)
+
+No garden schema change or migration. Garden records remain schemaVersion 1; scan IndexedDB
+and scan archives remain version 1. Optional `analysis.care` stores the care snapshot, reference
+provenance, and explicitly supplied growing context. Optional `growingLocation` is added to scan
+drafts. Older archives and results without either field continue to load; older builds ignore
+these extra fields. No records are rewritten on upgrade. Re-analyzing a completed scan retains
+the original result in history and creates a separate record.
+
+Moisture-check reminders use the existing journal `logs` fields and follow-up-date task behavior.
+The user reviews the proposed next-day check date and saves the journal form. There is no background
+notification, recurring watering automation, or new storage system.
