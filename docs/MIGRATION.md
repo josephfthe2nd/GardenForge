@@ -799,3 +799,12 @@ Open questions for the owner:
    or should every such merge ask first?
 4. Should the v1 photo database be kept indefinitely (it costs space), or deleted soon after
    retirement?
+
+## Additive AI scan storage (1.3.0 development branch)
+
+The garden remains schema v1. No v1-to-v2 garden migration is performed. AI scans use the new,
+independent IndexedDB `gardenforge.scans.v1`, version 1, store `scans`, with per-record
+`schemaVersion: 1`. Existing v1 garden JSON, portable copies and progress-photo records remain
+readable by earlier builds. Scan and progress-photo archives are separate, versioned formats with
+add-only import; duplicate IDs preserve the stored record. See `AI-PLANT-SCAN.md` for format,
+origin-transfer and size limitations. Rolling back code leaves scan data untouched.

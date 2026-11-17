@@ -1,6 +1,6 @@
 # GardenForge Mobile
 
-Version 1.2.2-audit-fixes • Brownsville, Texas • October 1, 2026
+Version 1.3.0-ai-scan-dev • Brownsville, Texas • October 1, 2026
 
 ## Start here: iPhone use
 
@@ -75,3 +75,16 @@ Apple: https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/ios
 MDN: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable
 
 Garden reference sources remain in the app's Reference & backup section.
+
+## AI Plant Scan development / ChatGPT Site
+
+This branch adds a six-photo plant scan, native iPhone camera/gallery controls, offline drafts,
+local scan history, Haiku analysis, optional Sonnet review, and optional Pl@ntNet identification
+and disease checks. The original garden application and schema v1 backups remain supported.
+The new ChatGPT Site uses a server Worker; ordinary static hosting still runs the garden tools,
+but does not enable cloud analysis. No keys are embedded in this repository.
+
+See [AI Plant Scan setup, data transfer and limitations](docs/AI-PLANT-SCAN.md).
+Progress photos now have a separate archive in Backup & restore on this branch; JSON backups
+and portable HTML still exclude them. Existing photos at another address cannot be accessed by
+this Site. Keep the old installation until a separately authorized transfer is verified.

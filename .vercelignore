@@ -4,3 +4,7 @@ tools
 AGENTS.md
 TESTING.md
 README.md
+server/
+.openai/
+dist/
+.env.example
