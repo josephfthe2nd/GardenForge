@@ -3,7 +3,7 @@
 const SCOPE=encodeURIComponent(new URL(self.registration.scope).pathname);
 const PREFIX='gardenforge-mobile-'+SCOPE+'-';
 const LEGACY_PREFIX='gardenforge-v1.2-growth-journal'+SCOPE+'-';
-const CACHE=PREFIX+'v1.2.2';
+const CACHE=PREFIX+'v1.3.0';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 // Check the version suffix too: a sibling scope can contain literal hyphens.
 const belongsToScope=name=>[PREFIX,LEGACY_PREFIX].some(prefix=>name.startsWith(prefix)&&/^v\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(name.slice(prefix.length)));
@@ -13,8 +13,9 @@ self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')sel
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==self.location.origin)return;
- if(request.mode==='navigate'){
-  event.respondWith((async()=>{try{const response=await fetch(request);if(response.ok){const cache=await caches.open(CACHE);await cache.put('./index.html',response.clone())}return response}catch(e){const cache=await caches.open(CACHE);return (await cache.match('./index.html'))||new Response('Reconnect once to load GardenForge.',{status:503,headers:{'Content-Type':'text/plain'}})}})());return;
+ const shellPath=new URL('./index.html',self.registration.scope).pathname,rootPath=new URL('./',self.registration.scope).pathname;
+ if(request.mode==='navigate'&&(url.pathname===rootPath||url.pathname===shellPath)){
+  event.respondWith((async()=>{try{const response=await fetch(request);if(response.ok&&!response.redirected&&response.headers.get('content-type')?.includes('text/html')){const cache=await caches.open(CACHE);await cache.put('./index.html',response.clone())}return response}catch(e){const cache=await caches.open(CACHE);return (await cache.match('./index.html'))||new Response('Reconnect once to load GardenForge.',{status:503,headers:{'Content-Type':'text/plain'}})}})());return;
  }
  if(ASSETS.some(path=>new URL(path,self.registration.scope).pathname===url.pathname))event.respondWith(caches.open(CACHE).then(cache=>cache.match(request)).then(cached=>cached||fetch(request)));
 });

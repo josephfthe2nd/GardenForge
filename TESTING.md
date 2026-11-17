@@ -24,3 +24,34 @@ Exports were validated by inspecting generated payloads. The operating-system Sh
 Offline-worker behavior was unit-tested with mocked Fetch/Cache APIs. HTTPS deployment, real service-worker registration, cache persistence and Home Screen installation have not been verified on a hosted site. There is no live site in this delivery.
 
 The crop reference data is unchanged from the original app; this was a mobile interface update, not an agronomic data audit.
+
+## AI Plant Scan development verification — 2026-11-17
+
+`npm test --prefix tools`: **40 passed, 0 failed** (Node test runner, Chromium 141 / Playwright 1.56.1).
+The original 20 checks remain in place. Added 20 checks cover:
+
+- Six-photo selection, preview, remove/retake, persistence, blob URL cleanup and unchanged v1 garden
+  records at 320 px, 390 px and 1440 px; no horizontal overflow.
+- Mock cloud analysis, escaped model output, scan history, completed-result preservation when editing,
+  scan archive export/import, and saved results/photos after an offline reload.
+- Undecodable image, provider failure and device-storage failure behavior.
+- Add-only progress-photo archive round trip and legacy garden/portable HTML compatibility.
+- Non-app navigation cannot replace the offline HTML shell with JSON.
+- Server authentication, Origin, content type, upload bounds, output validation, Haiku with six images,
+  uncertainty-driven Sonnet escalation/opt-out/failure, optional Pl@ntNet five-image limits, sanitized
+  errors, timeouts, secret-free configuration, and the per-isolate burst guard.
+- Built Worker serves the app/manifest/icons/service worker byte-for-byte and protects API routes.
+
+Visual desktop inspection in the Sites browser confirmed the preserved app and the new scan screen.
+`git diff --check` passed. The worker build succeeded. Browser tests use synthetic photos and mocked
+provider responses; they do not measure identification or disease-detection accuracy.
+
+**Not verified:** a live paid Anthropic or Pl@ntNet request (no keys supplied), actual iPhone Safari /
+installed-PWA camera permission, camera cancel/retake, HEIC conversion, native gallery multi-select,
+Home Screen storage/cache retention, VoiceOver, and OS Share/Files flows. The portable HTML test boots
+an exported document in a clean browser page; native file-preview behavior is still platform-dependent.
+
+Before accepting/merging: configure the new Site secret and test a real plant with 1 and 6 photos,
+exercise an uncertain case, verify provider usage, then test camera denial/cancel, library selection,
+relaunch/offline history and record transfer on the owner's iPhone. Keep the old app installed: the new
+origin cannot read its storage and the old deployed build does not yet export progress photos.
