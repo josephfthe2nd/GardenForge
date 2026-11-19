@@ -1,6 +1,6 @@
 # GardenForge Mobile
 
-Version 1.6.0-scan-guide-dev • Brownsville, Texas • October 1, 2026
+Version 1.6.1-ai-camera-dev • Brownsville, Texas • October 1, 2026
 
 ## Using one garden on iPhone and desktop
 
@@ -102,7 +102,9 @@ Open **Garden → Layout builder → Start a layout**. Enter the overall dimensi
 
 A draft stays on the device where you started it. **Review & apply → Apply layout** saves the map and the planting assignments to your existing garden. When account sync is connected, open Home to sync the applied layout. Removing a block from the drawing keeps its existing garden records.
 
-### Scan a plant
+### AI Camera
+
+Open **AI Camera** in the phone’s bottom bar or desktop sidebar. **Plant scan** opens the scanner and **Scan history** opens saved drafts and care guides. The section can also be opened directly at `#camera`. Older `#scan` links still work.
 
 Choose **Take photo** or **Choose from gallery** and add up to six pictures of one plant. Tap a thumbnail to inspect, replace, or remove it. **Scan options** controls the optional second opinion and specialist requests. The cost note beside Analyze updates with your selections.
 

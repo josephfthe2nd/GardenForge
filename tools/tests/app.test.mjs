@@ -15,7 +15,7 @@ after(async () => {
   srv?.server.close();
 });
 
-const TABS = ['overview', 'mix', 'calendar', 'garden', 'tasks'];
+const TABS = ['overview', 'mix', 'calendar', 'garden', 'scan', 'tasks'];
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
 for (const width of [320, 390]) {
