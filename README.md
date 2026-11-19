@@ -1,8 +1,10 @@
 # GardenForge Mobile
 
-Version 1.9.0-offline-database-dev • Brownsville, Texas • November 19, 2026
+Version 1.9.1-local-windows-dev • Brownsville, Texas • November 19, 2026
 
 Open **Journal → Plant Lookup** to search the offline catalog by common name, scientific name or variety. Look under **Tomato → Named varieties** for four included cultivar cards. **Add a plant or variety** saves any seed-packet or nursery name and notes, even offline. Use **Add to My Garden** to record a planting. **My plants** finds individual plantings, including variety names already on older records. Open the site online once to cache the offline app.
+
+**Home → Crops in a local window today** opens a searchable list for the current date in Brownsville. The total counts crop and variety entries separately. Direct variety dates and your saved dates take priority. A linked variety can also use its parent crop’s outdoor window, labeled with the crop name. Entries with only general season or hardiness information stay in All plants. You can also reach the list from **Plant Lookup → In window today**. Database varieties still save as the parent crop and cultivar in garden format 1.
 
 **Valley picks** shows 33 named cultivars listed by Rio Grande Valley extension guides. Their cards link the local recommendation and the source for the individual trait. The catalog also includes eight herb and pollinator profiles and names from Wikidata for 40 species. Some records overlap across sources.
 
