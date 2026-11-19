@@ -52,3 +52,18 @@ test('format recovery respects review opt-out and never retries provider refusal
 test('health enum casing is normalized without guessing invalid values',()=>{assert.equal(validateResult({...analysis,health:'Good'}).health,'good');assert.equal(validateResult({...analysis,health:' CONCERN '}).health,'concern');assert.throws(()=>validateResult({...analysis,health:'perfect'}));assert.throws(()=>validateResult({...analysis,confidence:80}));});
 
 test('server release version matches the frontend update indicator',()=>{const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');assert.equal(html.match(/const APP_VERSION='([^']+)'/)[1],BUILD_VERSION);});
+
+test('both models request a short health observation and per-candidate photo evidence',async()=>{
+ const matches=[{name:'Tagetes patula',evidence:'Photo 1 shows a bicolored flower head.'}];
+ const expected={...analysis,healthObservation:'A few tips look dry.',matches,confidence:.6};
+ const r=await handleScan(req(),env,async(_,options)=>{
+   const schema=JSON.parse(options.body).output_config.format.schema;
+   assert.ok(schema.required.includes('matches')&&schema.required.includes('healthObservation'));
+   assert.deepEqual(schema.properties.matches.items.required,['name','evidence']);
+   return response(expected);
+ });
+ const saved=await r.json();
+ assert.equal(saved.escalated,true);assert.deepEqual(saved.analysis.matches,matches);
+ assert.equal(saved.analysis.healthObservation,expected.healthObservation);
+ assert.throws(()=>validateResult({...analysis,matches:[{name:'Rose',evidence:null}]}));
+});

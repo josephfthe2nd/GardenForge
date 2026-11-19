@@ -1,6 +1,6 @@
 # GardenForge Mobile
 
-Version 1.5.0-garden-layout-dev • Brownsville, Texas • October 1, 2026
+Version 1.6.0-scan-guide-dev • Brownsville, Texas • October 1, 2026
 
 ## Using one garden on iPhone and desktop
 
@@ -101,3 +101,9 @@ this Site. Keep the old installation until a separately authorized transfer is v
 Open **Garden → Layout builder → Start a layout**. Enter the overall dimensions in feet and choose a rectangle, an L shape with a measured cutout, or a blank canvas. Join rectangular ground sections to trace a more complex footprint. Place existing beds or create measured planters, raised beds, in-ground beds and seed trays. Drag blocks on the drawing or enter exact coordinates under **Edit measurements**. Choose **Crops by space** for a closer view of one bed.
 
 A draft stays on the device where you started it. **Review & apply → Apply layout** saves the map and the planting assignments to your existing garden. When account sync is connected, open Home to sync the applied layout. Removing a block from the drawing keeps its existing garden records.
+
+### Scan a plant
+
+Choose **Take photo** or **Choose from gallery** and add up to six pictures of one plant. Tap a thumbnail to inspect, replace, or remove it. **Scan options** controls the optional second opinion and specialist requests. The cost note beside Analyze updates with your selections.
+
+A completed scan opens its **Care guide**. Tap **Watering** for moisture checks and an editable journal reminder. **Compare IDs** shows the available visual evidence and suggests a follow-up shot. Adding photos to a completed scan creates a separate draft and preserves the original result. Older results remain readable offline.
