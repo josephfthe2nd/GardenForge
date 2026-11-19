@@ -1,6 +1,13 @@
 # GardenForge Mobile
 
-Version 1.3.3-scan-results-dev • Brownsville, Texas • October 1, 2026
+Version 1.4.0-account-sync-dev • Brownsville, Texas • October 1, 2026
+
+## Using one garden on iPhone and desktop
+
+In the private ChatGPT Site, sign in with the same ChatGPT account on both devices. On the iPhone, open Home in the browser or app that already holds your garden. Tap **Connect this device** under **Garden sync** and wait for **Last synced**. Then connect the desktop. GardenForge combines records from both devices, including progress photos, scan photos, results and drafts. Existing garden JSON remains version 1.
+
+Return to Home after editing. While Home is open, the app checks on entry, on reconnect, and every minute. **Sync now** runs it immediately. Offline edits stay on the device. Different records merge automatically. Edit conflicts and edit-versus-delete conflicts display both versions for you to choose. Tabs sharing a browser should use the latest local copy. A garden saved on another website or in a downloaded HTML file can be moved into the Site with the existing garden, progress-photo and scan backup controls.
+
 
 ## Start here: iPhone use
 
