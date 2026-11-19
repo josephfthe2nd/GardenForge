@@ -16,6 +16,7 @@ export function cleanModelCare(care) {
     if (typeof care[key] !== 'string' || !care[key].trim() || care[key].length > 600) return null;
     output[key] = care[key];
   }
+  if(typeof care.wateringSignal==='string'&&care.wateringSignal.trim()&&care.wateringSignal.length<=600)output.wateringSignal=care.wateringSignal;
   return output;
 }
 export function enrichCare(analysis, input) {
