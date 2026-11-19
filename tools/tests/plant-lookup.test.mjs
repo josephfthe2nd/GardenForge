@@ -51,3 +51,47 @@ test('local search, selection and cached reopen work without a provider, includi
   run("lookupCards.clear();localStorage.getItem=()=>{throw Error('private mode')}");
   assert.match(run('lookupDetail()'),/Connect to GardenForge online/);assert.equal(calls,1);
 });
+
+test('named guides use an account- and cultivar-specific cache and only send plant names',async()=>{
+  const saved=new Map();
+  const env={ANTHROPIC_API_KEY:'test',BUCKET:{get:async k=>saved.has(k)?{json:async()=>JSON.parse(saved.get(k))}:null,put:async(k,v)=>saved.set(k,v)}};
+  const calls=[];
+  const run=(user,data,method='POST')=>handlePlantLookup(request('named',{
+    headers:{origin:'https://garden.test','oai-authenticated-user-id':user,'content-type':'application/json'},
+    method,body:JSON.stringify(data)
+  }),env,catalog,'mock',async(_url,opts)=>{
+    const prompt=JSON.parse(JSON.parse(opts.body).messages[0].content);
+    calls.push(prompt);return provider();
+  });
+  const identity={name:'Tomato',scientific:'Solanum lycopersicum',cultivar:'Packet A'};
+  for(const bad of [{...identity,notes:'private'}, {...identity,name:''},{...identity,cultivar:'x'.repeat(210)}]){
+    assert.equal((await run('named-validation',bad)).status,400);
+  }
+  assert.equal((await run('named-validation',{...identity,notes:'x'.repeat(2500)})).status,413);
+  assert.equal(calls.length,0);
+  assert.equal((await run('named-alpha',identity)).status,200);
+  assert.equal((await run('named-alpha',{...identity,cultivar:' packet a '})).status,200);
+  assert.equal((await run('named-alpha',{...identity,cultivar:'Packet B'})).status,200);
+  assert.equal((await run('named-beta',identity)).status,200);
+  assert.deepEqual(calls[0],{id:'named',...identity});assert.equal(calls.length,3);
+  assert.equal(saved.size,3);
+  for(const key of saved.keys())assert.match(key,/^private-plant-guides\/v1\/[a-f0-9]{64}\.json$/);
+});
+
+test('old planting labels, parent plants and included cultivar cards resolve independently',()=>{
+  const app=extractInlineScript(html);
+  const code=app.slice(app.indexOf('const lookupState='),app.indexOf("document.addEventListener('input',e=>{if(e.target.id==='lookup-query')"));
+  const parent=db.crops.find(c=>c.id==='tomato');
+  const plans=[{id:'old',cropId:'tomato',variety:'Packet One',bedId:''},{id:'known',cropId:'tomato',variety:'San Marzano',bedId:''}];
+  const ctx=vm.createContext({DB:db,state:{plans},parent,plans,crops:()=>db.crops,cropBy:id=>db.crops.find(c=>c.id===id),bedBy:()=>null});
+  vm.runInContext(code,ctx);const run=s=>vm.runInContext(s,ctx);
+  assert.equal(run("lookupState.query='packet one';lookupRows()[0].plan.id"),'old');
+  assert.equal(run("lookupState.query='san marzano';lookupRows().length"),1);
+  assert.equal(run("guideRequest(parent).route"),'tomato');
+  assert.equal(run("guideRequest(parent,plans[0]).route"),'named');
+  assert.equal(run("guideRequest(parent,plans[1]).route"),'tomato-san-marzano');
+  assert.equal(run("findLookupPlant({scientificName:parent.scientific}).id"),'tomato');
+  const entry={version:1,parentId:parent.id,plant:'Tomato',cultivar:'Packet One',scientific:parent.scientific};
+  ctx.entry=entry;assert.equal(run('validPlantLookup(entry)'),true);
+  assert.equal(run("validPlantLookup({...entry,scientific:{}})"),false);
+});
