@@ -116,3 +116,41 @@ test('offline database, aliases, Valley picks and planter-linked variety identit
   assert.equal(run("guideRequest(cropBy('okra'),plans[0]).key"),run('guideRequest(selectedLookup().crop).key'));
   assert.ok(!db.crops.some(c=>c.id.startsWith('opdb-')));
 });
+
+test('Home and lookup use the same dated catalog, including custom and inherited windows',()=>{
+  const app=extractInlineScript(html);
+  const locals=[
+    {id:'custom-bed-crop',name:'Bed crop',windows:[['12-20','01-05']]},
+    {id:'packet',name:'Bed crop Packet',windows:[],plantLookup:{parentId:'custom-bed-crop',cultivar:'Packet'}},
+    {id:'separate',name:'Bed crop Early',windows:[['03-02','03-03']],plantLookup:{parentId:'custom-bed-crop',cultivar:'Early'}},
+    {id:'undated',name:'Undated crop',windows:[]}
+  ];
+  const crops=[...db.crops,...locals];
+  let day='2026-11-19';
+  const ctx=vm.createContext({DB:db,state:{plans:[]},crops:()=>crops,cropBy:id=>crops.find(c=>c.id===id),today:()=>day,location:{hash:'#plant-lookup/window'},ui:{page:'overview'}});
+  const dates=app.slice(app.indexOf('function rangeDates('),app.indexOf('function monthMatch('));
+  const lookup=app.slice(app.indexOf('const lookupState='),app.indexOf("document.addEventListener('input',e=>{if(e.target.id==='lookup-query')"));
+  vm.runInContext(dates+lookup,ctx);
+  const run=query=>vm.runInContext(query,ctx);
+  const ids=d=>Array.from(run("localWindowRows('"+d+"').map(row=>row.crop.id)"));
+  const overall=ids(day);
+  assert.ok(overall.length>100);assert.equal(new Set(overall).size,overall.length);
+  run("lookupRoute()");assert.equal(run("lookupState.scope"),'window');
+  assert.deepEqual(Array.from(run('lookupRows().map(row=>row.crop.id)')),overall);
+  run("lookupState.query='Calypso';");assert.ok(run("lookupRows().some(r=>r.crop.id==='cilantro-calypso')"));
+  assert.ok(overall.includes('onion'));assert.ok(!overall.includes('onion-1015y'));
+  assert.ok(ids('2026-10-31').includes('onion-1015y'));assert.ok(!ids('2026-11-01').includes('onion-1015y'));
+  assert.ok(ids('2027-02-14').includes('opdb-alabama-red-okra'));
+  assert.ok(!ids('2027-02-13').includes('opdb-alabama-red-okra'));
+  assert.ok(!overall.includes('wd-q34887')); // Papaya has growing information, no Valley date.
+  assert.ok(ids('2027-01-05').includes('packet'));assert.ok(!ids('2027-01-06').includes('packet'));
+  assert.ok(!ids('2027-01-05').includes('separate'));assert.ok(ids('2027-03-03').includes('separate'));
+  assert.ok(!overall.includes('undated'));
+  assert.equal(run("plantingWindow(cropBy('okra'),'Alabama Red').id"),'okra');
+  assert.equal(run("plantingWindow(cropBy('onion'),'1015Y').id"),'onion-1015y');
+  assert.equal(run("windowOwner(includedPlant('opdb-acorn-squash-table-queen')).id"),'pumpkin');
+  assert.equal(run("windowOwner(includedPlant('opdb-4010-forage-pea'))"),null);
+  run("location.hash='#plant-lookup/window/opdb-alabama-red-okra';lookupRoute()");
+  assert.equal(run('lookupState.id'),'opdb-alabama-red-okra');
+  run("location.hash='#plant-lookup';lookupRoute()");assert.equal(run('lookupState.scope'),'catalog');
+});

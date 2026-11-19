@@ -33,6 +33,22 @@ def conditions(row):
     return [light, water, spacing, row['season'] if row['season'] in ('cool', 'warm', 'perennial') else '']
 
 
+def timing_parent(parent_id, category, description):
+    # The regional chart distinguishes food crops and separate corn and squash classes.
+    if category in ('flower', 'cover-crop') or 'ornamental' in description or 'cover crop' in description:
+        return ''
+    if parent_id == 'corn' and 'sweet corn' not in description:
+        return ''
+    if parent_id == 'beans' and re.search(r'\b(dry|shelling|grain)\b', description) and 'snap' not in description:
+        return ''
+    if parent_id == 'squash':
+        if re.search(r'\b(winter|butternut|buttercup|acorn|spaghetti|kabocha|hubbard|delicata)\b', description):
+            return 'pumpkin'
+        if not re.search(r'\b(summer|zucchini|pattypan|crookneck|straightneck)\b', description):
+            return ''
+    return parent_id
+
+
 def build(csv_path):
     if hashlib.sha256(csv_path.read_bytes()).hexdigest() != DIGEST:
         raise ValueError('CSV does not match the pinned OpenPlantDB release.')
@@ -60,6 +76,7 @@ def build(csv_path):
     # A species name alone cannot assign a pepper's heat or a squash's market class.
     parents.pop('Capsicum annuum', None)
     extras = []
+    window_parents = {}
     with csv_path.open(encoding='utf-8', newline='') as records:
         for row in csv.DictReader(records):
             taxon = row['scientific_name'].strip()
@@ -95,8 +112,12 @@ def build(csv_path):
             if key in known:
                 continue
             known.add(key)
+            if parent['windows']:
+                timing_id = timing_parent(parent['id'], row['category'], words)
+                if timing_id != parent['id']:
+                    window_parents[row['slug']] = timing_id
             extras.append([row['slug'], parent['id'], cultivar, species, row['common_name'], *conditions(row)])
-    db['openPlantDB'] = {'revision': REVISION, 'varieties': sorted(extras)}
+    db['openPlantDB'] = {'revision': REVISION, 'varieties': sorted(extras), 'windowParents': window_parents}
     encoded = json.dumps(db, separators=(',', ':'), ensure_ascii=False).replace('</', '<\\/')
     APP.write_text(html[:block.start(1)] + encoded + html[block.end(1):])
     print(f'{len(extras)} additional cultivar records, {len(db["crops"])} core records')
