@@ -1,6 +1,13 @@
 # GardenForge Mobile
 
-Version 1.6.1-ai-camera-dev • Brownsville, Texas • October 1, 2026
+Version 1.7.0-plant-lookup-dev • Brownsville, Texas • October 1, 2026
+
+Open **Journal → Plant Lookup** to search the included catalog by common or botanical name, or use **My plants** to search your plantings by variety or growing space. The catalog, reference photos and included guides are part of the offline shell. Load the site online once to make it available offline.
+
+**Load AI care guide** optionally requests generic care details for one selected catalog entry. Browsing, searching, opening a plant, and reading a saved card do not call the model. The authenticated Worker sends only the included catalog entry to the configured Haiku model and stores completed guides on the device and in the Site's shared species-guide cache. Local storage availability determines whether a downloaded guide survives closing the browser. No API key is required for the included catalog.
+
+From a completed scan, **Add to My Garden** links it to an existing planting or creates a plant in a selected growing space. Open that planting under **Plant Lookup → My plants** to see its dated scans.
+
 
 ## Using one garden on iPhone and desktop
 

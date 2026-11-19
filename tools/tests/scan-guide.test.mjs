@@ -7,7 +7,7 @@ import {ROOT,extractInlineScript} from './helpers.mjs';
 
 const app=extractInlineScript(fs.readFileSync(ROOT+'/index.html','utf8'));
 function render(code,input){
- const context=vm.createContext({input,scanDraft:{images:[]},ico:()=>'',iconPaths:{}});
+ const context=vm.createContext({input,scanDraft:{images:[]},state:{plans:[]},ico:()=>'',iconPaths:{}});
  const escape=app.split('\n').find(line=>line.startsWith('const h='));
  const helpers=app.slice(app.indexOf("let scanView='capture'"),app.indexOf('function renderScan(){'));
  const care=app.slice(app.indexOf('function careIcon('),app.indexOf('function scanCareReminder()'));
