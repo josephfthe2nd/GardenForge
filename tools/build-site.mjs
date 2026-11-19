@@ -19,7 +19,7 @@ const sync=await fs.readFile(path.join(root,'server/sync.mjs'),'utf8');
 const lookup=await fs.readFile(path.join(root,'server/plant-lookup.mjs'),'utf8');
 const html=await fs.readFile(path.join(root,'index.html'),'utf8');
 const reference=JSON.parse(html.match(/<script id="reference-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
-const catalog=reference.crops.map(({id,name,scientific})=>({id,name,scientific}));
+const catalog=reference.crops.map(({id,name,scientific,plantLookup})=>plantLookup?.cultivar?{id,name:plantLookup.plant,scientific,cultivar:plantLookup.cultivar}:{id,name,scientific});
 const entry=sync+'\n'+handler+'\n'+lookup+'\nconst catalog='+JSON.stringify(catalog)+';\nconst assets='+JSON.stringify(assets)+';\n'+`export default {async fetch(request,env){
 const garden=await handleGardenSync(request,env);if(garden)return garden;
 const card=await handlePlantLookup(request,env,catalog,MODELS.primary);if(card)return card;

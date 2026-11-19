@@ -826,3 +826,7 @@ notification, recurring watering automation, or new storage system.
 ### Optional garden layout, format 1
 
 The optional `settings.gardenLayout` entry carries its own version. Garden document format 1 and its storage key are unchanged. Older gardens without a map open normally. The entry contains the measured bounds, rectangular ground sections, bed IDs with positions and orientation, and planting IDs with bed-relative rectangles. Bed dimensions and crop assignments still live in the original records. JSON backups, portable HTML and account sync carry applied layouts with the settings. Unapplied drafts live separately in device storage. Removing an existing block from the map retains the underlying record and its ID. A fresh draft skips geometry for records removed from the garden.
+
+### Named plant and cultivar entries
+
+New lookup entries are ordinary custom crops with an optional `plantLookup` object containing version 1, the parent crop ID when available, the plant label, the cultivar label and an optional scientific name. The garden continues to use schema version 1. Existing records keep their IDs, and planting varieties entered in older versions appear in search. Garden backups, portable HTML and account sync carry custom crop records. Older editors may omit the extension when re-saving a custom crop. Generated guides are cached separately from the garden and can be requested again.
