@@ -1,8 +1,14 @@
 # GardenForge Mobile
 
-Version 1.8.0-varieties-dev • Brownsville, Texas • October 1, 2026
+Version 1.9.0-offline-database-dev • Brownsville, Texas • November 19, 2026
 
 Open **Journal → Plant Lookup** to search the offline catalog by common name, scientific name or variety. Look under **Tomato → Named varieties** for four included cultivar cards. **Add a plant or variety** saves any seed-packet or nursery name and notes, even offline. Use **Add to My Garden** to record a planting. **My plants** finds individual plantings, including variety names already on older records. Open the site online once to cache the offline app.
+
+**Valley picks** shows 33 named cultivars listed by Rio Grande Valley extension guides. Their cards link the local recommendation and the source for the individual trait. The catalog also includes eight herb and pollinator profiles and names from Wikidata for 40 species. Some records overlap across sources.
+
+The offline cultivar index adds 3,079 OpenPlantDB records across 82 parent entries. OpenPlantDB supplies general light, relative water demand, spacing and season where available. These fields do not determine a local planting date or watering reminder. Opening a database variety and choosing **Add to My Garden** stores the parent crop and the packet name in the existing planting format. Only lookup displays the large cultivar index.
+
+**Data sources.** OpenPlantDB and Wikidata publish their structured data under CC0. The GardenForge import pins OpenPlantDB commit `91cbe3b86c6f5fddb6b8cab6d9505c630f36ea7f`; the plant card links to its source. To reproduce it, download the CSV at the pinned URL from `python tools/import-openplantdb.py --help`, then run `python tools/import-openplantdb.py /path/to/plants.csv`. The importer validates the SHA-256 digest, uses named cultivars that can be mapped to a planner crop, and gives priority to curated entries. Wikidata name links point to individual records and revisions. Extension care summaries and Valley recommendations link to the relevant source on each card.
 
 **Load AI care guide** optionally sends the selected plant name, scientific name and cultivar to the configured Haiku model. The app shows a possible API charge before the request. Search, selection, saving a variety, and reopening a downloaded guide are free of model calls. Included entries use a common guide cache. Custom names use a private account cache on the Site. The browser keeps completed guides for offline reading while its storage is available.
 

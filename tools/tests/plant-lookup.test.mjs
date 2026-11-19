@@ -95,3 +95,24 @@ test('old planting labels, parent plants and included cultivar cards resolve ind
   ctx.entry=entry;assert.equal(run('validPlantLookup(entry)'),true);
   assert.equal(run("validPlantLookup({...entry,scientific:{}})"),false);
 });
+
+test('offline database, aliases, Valley picks and planter-linked variety identities',()=>{
+  const fragment=extractInlineScript(html).split('const lookupState=')[1].split("document.addEventListener('input',e=>{if(e.target.id==='lookup-query')")[0];
+  const plans=[{id:'okra-plant',cropId:'okra',variety:'Alabama Red',bedId:''}];
+  const ctx=vm.createContext({DB:db,state:{plans},plans,crops:()=>db.crops,cropBy:id=>db.crops.find(c=>c.id===id),bedBy:()=>null,localStorage:{getItem:()=>null},navigator:{onLine:false},hostedBuild:false,location:{protocol:'file:'},ref:()=>'',windowText:()=>'',ico:()=>'',h:String});
+  vm.runInContext('const lookupState='+fragment,ctx);
+  const run=code=>vm.runInContext(code,ctx);
+  const rows=db.openPlantDB.varieties;
+  assert.equal(new Set(rows.map(row=>row[0])).size,rows.length);
+  assert.ok(rows.length>=3000);
+  assert.ok(rows.every(row=>row.length===9&&db.crops.some(c=>c.id===row[1])));
+  assert.equal(run("lookupState.query='tomate de cascara';lookupRows()[0].crop.name"),'Tomatillo');
+  assert.equal(run("lookupState.query='';lookupState.scope='regional';lookupRows().length"),33);
+  assert.equal(run("lookupState.query='alabama red';lookupState.scope='catalog';lookupRows().length"),1);
+  assert.match(run("lookupState.id='opdb-alabama-red-okra';lookupDetail()"),/OpenPlantDB/);
+  assert.match(run('lookupDetail()'),/General care for Okra/);
+  assert.equal(run("guideRequest(selectedLookup().crop).body.cultivar"),'Alabama Red');
+  assert.equal(run("catalogVariety(cropBy('okra'),plans[0]).id"),'opdb-alabama-red-okra');
+  assert.equal(run("guideRequest(cropBy('okra'),plans[0]).key"),run('guideRequest(selectedLookup().crop).key'));
+  assert.ok(!db.crops.some(c=>c.id.startsWith('opdb-')));
+});
