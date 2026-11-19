@@ -1,6 +1,6 @@
 # GardenForge Mobile
 
-Version 1.4.0-account-sync-dev • Brownsville, Texas • October 1, 2026
+Version 1.4.1-sync-menu-dev • Brownsville, Texas • October 1, 2026
 
 ## Using one garden on iPhone and desktop
 

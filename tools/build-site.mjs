@@ -3,7 +3,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 const root=path.resolve(import.meta.dirname,'..');
 const types={'garden-sync.js':'text/javascript; charset=utf-8','index.html':'text/html; charset=utf-8','sw.js':'text/javascript; charset=utf-8','manifest.webmanifest':'application/manifest+json','icon-192.png':'image/png','icon-512.png':'image/png','apple-touch-icon.png':'image/png'};
-const assets={};for(const [file,type] of Object.entries(types))assets['/'+file]={type,data:(await fs.readFile(path.join(root,file))).toString('base64')};
+// Sites may serve the static client directly. Build it and the Worker from the same bytes.
+const clientDir = path.join(root, 'dist/client');
+await fs.rm(clientDir, {recursive: true, force: true});
+await fs.mkdir(clientDir, {recursive: true});
+const assets = {};
+for (const [file, type] of Object.entries(types)) {
+  const bytes = await fs.readFile(path.join(root, file));
+  await fs.writeFile(path.join(clientDir, file), bytes);
+  assets['/' + file] = {type, data: bytes.toString('base64')};
+}
 const care=await fs.readFile(path.join(root,'server/care.mjs'),'utf8');
 const handler=care+'\n'+(await fs.readFile(path.join(root,'server/scan.mjs'),'utf8')).replace("import {cleanModelCare,enrichCare} from './care.mjs';\n",'');
 const sync=await fs.readFile(path.join(root,'server/sync.mjs'),'utf8');
