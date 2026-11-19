@@ -822,3 +822,7 @@ the original result in history and creates a separate record.
 Moisture-check reminders use the existing journal `logs` fields and follow-up-date task behavior.
 The user reviews the proposed next-day check date and saves the journal form. There is no background
 notification, recurring watering automation, or new storage system.
+
+### Optional garden layout, format 1
+
+The optional `settings.gardenLayout` entry carries its own version. Garden document format 1 and its storage key are unchanged. Older gardens without a map open normally. The entry contains the measured bounds, rectangular ground sections, bed IDs with positions and orientation, and planting IDs with bed-relative rectangles. Bed dimensions and crop assignments still live in the original records. JSON backups, portable HTML and account sync carry applied layouts with the settings. Unapplied drafts live separately in device storage. Removing an existing block from the map retains the underlying record and its ID. A fresh draft skips geometry for records removed from the garden.

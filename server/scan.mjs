@@ -7,7 +7,7 @@ const reply = (data, status = 200) => Response.json(data, { status, headers: { '
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 const str = (v, max = 2000) => typeof v === 'string' && v.length <= max;
 const list = (v) => Array.isArray(v) && v.length <= 12 && v.every(x => str(x));
-export const BUILD_VERSION='1.4.1-sync-menu-dev';
+export const BUILD_VERSION='1.5.0-garden-layout-dev';
 const textField=(description)=>({type:'string',description});
 const textList={type:'array',items:{type:'string'},description:'At most 6 concise strings, each under 1500 characters. Use [] when there are none.'};
 const careKeys=['watering','wateringCheck','wateringMethod','sunlight','soil','feeding','seasonal'];
