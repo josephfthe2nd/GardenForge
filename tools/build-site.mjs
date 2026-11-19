@@ -16,8 +16,13 @@ for (const [file, type] of Object.entries(types)) {
 const care=await fs.readFile(path.join(root,'server/care.mjs'),'utf8');
 const handler=care+'\n'+(await fs.readFile(path.join(root,'server/scan.mjs'),'utf8')).replace("import {cleanModelCare,enrichCare} from './care.mjs';\n",'');
 const sync=await fs.readFile(path.join(root,'server/sync.mjs'),'utf8');
-const entry=sync+'\n'+handler+'\nconst assets='+JSON.stringify(assets)+';\n'+`export default {async fetch(request,env){
+const lookup=await fs.readFile(path.join(root,'server/plant-lookup.mjs'),'utf8');
+const html=await fs.readFile(path.join(root,'index.html'),'utf8');
+const reference=JSON.parse(html.match(/<script id="reference-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
+const catalog=reference.crops.map(({id,name,scientific})=>({id,name,scientific}));
+const entry=sync+'\n'+handler+'\n'+lookup+'\nconst catalog='+JSON.stringify(catalog)+';\nconst assets='+JSON.stringify(assets)+';\n'+`export default {async fetch(request,env){
 const garden=await handleGardenSync(request,env);if(garden)return garden;
+const card=await handlePlantLookup(request,env,catalog,MODELS.primary);if(card)return card;
 const api=await handleScan(request,env);if(api)return api;
 if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405});
 const p=new URL(request.url).pathname;const asset=assets[p==='/'?'/index.html':p];if(!asset)return new Response('Not found',{status:404});
