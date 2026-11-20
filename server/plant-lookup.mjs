@@ -43,6 +43,18 @@ async function namedCacheKey(user,plant){
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(identity)));
   return 'private-plant-guides/v1/'+Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')+'.json';
 }
+// Some runtimes expose a stream even for a zero-byte POST.
+async function hasBodyBytes(request){
+  if(!request.body)return false;
+  const reader=request.body.getReader();
+  try{
+    while(true){
+      const {value,done}=await reader.read();
+      if(done)return false;
+      if(value.byteLength){void reader.cancel().catch(()=>{});return true;}
+    }
+  }finally{reader.releaseLock();}
+}
 export async function handlePlantLookup(request,env,catalog,defaultModel,fetcher=fetch) {
   const url=new URL(request.url);
   if(!url.pathname.startsWith('/api/plant-card/'))return null;
@@ -54,7 +66,7 @@ export async function handlePlantLookup(request,env,catalog,defaultModel,fetcher
   try{
     const named=route==='named';
     const plant=named?await readNamedPlant(request):catalog.find(p=>p.id===route);
-    if(!plant||(!named&&request.body))return cardReply({error:'Select a catalog entry or saved plant.'},400);
+    if(!plant||(!named&&await hasBodyBytes(request)))return cardReply({error:'Select a catalog entry or saved plant.'},400);
     const key=named?await namedCacheKey(user,plant):'plant-guides/v1/'+plant.id+'.json';
     if(env.BUCKET){
       const object=await env.BUCKET.get(key);
