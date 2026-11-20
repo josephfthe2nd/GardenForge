@@ -702,7 +702,7 @@ function savedGuide(id){
   return null;
 }
 function validLookupGuide(card,id){
-  return card?.id===id&&typeof card.model==='string'&&['watering','light','soil','season'].every(k=>typeof card.sections?.[k]==='string'&&card.sections[k].length>0&&card.sections[k].length<=800);
+  return card?.id===id&&typeof card.model==='string'&&['watering','light','soil','season'].every(k=>typeof card.sections?.[k]==='string'&&card.sections[k].length>0&&card.sections[k].length<=6000);
 }
 const normalizedLookup=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 function validPlantLookup(info){
@@ -1018,7 +1018,7 @@ async function saveGrowthPhoto(form){const fd=new FormData(form),file=form.eleme
 
 // Phone interaction helpers. No analytics or cloud data transmission.
 const isPhone=()=>window.matchMedia('(max-width:850px)').matches;
-const APP_VERSION='1.9.2-care-guide-dev';
+const APP_VERSION='1.9.3-care-guide-dev';
 const PAGES=['overview','mix','calendar','garden','tasks','reference','scan','plant-lookup'];
 let installPrompt=null, offlineReady=false, pendingFile=null, updateRegistration=null;
 const hostedBuild=document.documentElement.dataset.hosted==='true';

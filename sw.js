@@ -3,7 +3,7 @@
 const SCOPE=encodeURIComponent(new URL(self.registration.scope).pathname);
 const PREFIX='gardenforge-mobile-'+SCOPE+'-';
 const LEGACY_PREFIX='gardenforge-v1.2-growth-journal'+SCOPE+'-';
-const CACHE=PREFIX+'v1.9.2';
+const CACHE=PREFIX+'v1.9.3';
 const ASSETS=['./','./index.html','./garden-sync.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 // Check the version suffix too: a sibling scope can contain literal hyphens.
 const belongsToScope=name=>[PREFIX,LEGACY_PREFIX].some(prefix=>name.startsWith(prefix)&&/^v\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(name.slice(prefix.length)));
