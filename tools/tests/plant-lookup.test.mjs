@@ -166,3 +166,19 @@ test('Home and lookup use the same dated catalog, including custom and inherited
   assert.equal(run('lookupState.id'),'opdb-alabama-red-okra');
   run("location.hash='#plant-lookup';lookupRoute()");assert.equal(run('lookupState.scope'),'catalog');
 });
+
+test('Detroit Dark Red accepts complete sections across stop reasons and rejects truncated JSON',async()=>{
+  const id='beet-detroit-dark-red';
+  const full={...sections,watering:'Check moisture. '.repeat(55).trim()};
+  const ask=(reason,text)=>handlePlantLookup(request(id,{headers:{origin:'https://garden.test','oai-authenticated-user-id':'beet-'+reason}}),{ANTHROPIC_API_KEY:'test'},catalog,'mock',async(_url,opts)=>{
+    assert.equal(JSON.parse(opts.body).max_tokens,3500);
+    return Response.json({stop_reason:reason,content:[{type:'thinking'},{type:'text',text}]});
+  });
+  for(const reason of ['end_turn','max_tokens','stop_sequence']){
+    const r=await ask(reason,'```json\n'+JSON.stringify(full)+'\n```');
+    assert.equal(r.status,200);assert.deepEqual((await r.json()).sections,full);
+  }
+  const cut=await ask('max_tokens','{"watering":"Check');
+  assert.equal(cut.status,502);assert.match((await cut.json()).error,/output limit/);
+  assert.equal((await ask('refusal',JSON.stringify(full))).status,422);
+});
