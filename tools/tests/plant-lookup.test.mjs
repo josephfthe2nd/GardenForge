@@ -24,6 +24,18 @@ test('only explicit same-origin signed-in requests for included plants can conta
   }
   assert.equal((await handlePlantLookup(request('tomato'),{},catalog,'mock',rejected)).status,503);
 });
+test('Calypso guide accepts zero-byte POST streams and rejects unexpected bytes',async()=>{
+  const ask=(body)=>handlePlantLookup(request('cilantro-calypso',{body,duplex:'half'}),{
+    BUCKET:{get:async()=>({json:async()=>({id:'cilantro-calypso',model:'mock',sections})})}
+  },catalog,'mock',()=>assert.fail('Unexpected provider call'));
+  const empty=await ask('');
+  assert.equal(empty.status,200);
+  assert.deepEqual((await empty.json()).sections,sections);
+  const chunks=new ReadableStream({start(controller){
+    controller.enqueue(new Uint8Array(0));controller.enqueue(Uint8Array.of(1));controller.close();
+  }});
+  assert.equal((await ask(chunks)).status,400);
+});
 test('concurrent card requests share one provider call and later devices can reuse stored guide',async()=>{
   const store=new Map();const env={ANTHROPIC_API_KEY:'test',BUCKET:{get:async k=>store.has(k)?{json:async()=>JSON.parse(store.get(k))}:null,put:async(k,v)=>store.set(k,v)}};
   let calls=0;const fetcher=async(url,options)=>{calls++;const json=JSON.parse(options.body);assert.deepEqual(JSON.parse(json.messages[0].content),catalog.find(c=>c.id==='tomato'));return provider();};
