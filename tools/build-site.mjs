@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 const root=path.resolve(import.meta.dirname,'..');
 const types={'garden-sync.js':'text/javascript; charset=utf-8','index.html':'text/html; charset=utf-8','sw.js':'text/javascript; charset=utf-8','manifest.webmanifest':'application/manifest+json','icon-192.png':'image/png','icon-512.png':'image/png','apple-touch-icon.png':'image/png'};
+for(const name of ['water','sun','care','soil','zone','health','ph'])types['care-'+name+'.svg']='image/svg+xml';
 // Sites may serve the static client directly. Build it and the Worker from the same bytes.
 const clientDir = path.join(root, 'dist/client');
 await fs.rm(clientDir, {recursive: true, force: true});

@@ -8,10 +8,11 @@ test('Sites Worker preserves original assets byte-for-byte and protects API rout
 test('production static assets match the Worker, including the sync controls and offline shell', async () => {
   const {default: worker} = await import('data:text/javascript;base64,' +
     (await fs.readFile(ROOT+'/dist/server/index.js')).toString('base64'));
-  const filenames = ['index.html','garden-sync.js','sw.js','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png'];
+  const filenames = ['index.html','garden-sync.js','sw.js','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png',...['water','sun','care','soil','zone','health','ph'].map(name=>'care-'+name+'.svg')];
   assert.deepEqual((await fs.readdir(ROOT+'/dist/client')).sort(), [...filenames].sort());
   for (const file of filenames) {
     const response = await worker.fetch(new Request('https://gardenforge.example/'+file), {});
+    if(file.endsWith('.svg'))assert.equal(response.headers.get('content-type'),'image/svg+xml');
     const staticCopy = await fs.readFile(ROOT+'/dist/client/'+file);
     assert.deepEqual(staticCopy, await fs.readFile(ROOT+'/'+file), file+' static asset');
     assert.deepEqual(staticCopy, Buffer.from(await response.arrayBuffer()), file+' Worker asset');

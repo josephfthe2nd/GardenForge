@@ -53,7 +53,7 @@ test('local search, selection and cached reopen work without a provider, includi
   const escape=app.split('\n').find(line=>line.startsWith('const h='));
   const storage=new Map();let calls=0;
   const ctx=vm.createContext({DB:db,state:{plans:[]},navigator:{onLine:true},hostedBuild:true,location:{protocol:'https:'},document:{getElementById:()=>null},ico:()=>'',ref:()=>'',localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},crops:()=>db.crops,cropBy:id=>db.crops.find(c=>c.id===id),fetch:async()=>{calls++;return Response.json({id:'french-marigold',model:'mock',sections});}});
-  vm.runInContext(escape+'\n'+fragment,ctx);
+  vm.runInContext(html.slice(html.indexOf('function careIcon('),html.indexOf('function legacyScanCare('))+'\n'+escape+'\n'+fragment,ctx);
   const run=code=>vm.runInContext(code,ctx);
   assert.equal(run("lookupState.query='tagetes patula';lookupRows()[0].crop.name"),'French marigold');
   assert.match(run("lookupState.id='french-marigold';lookupDetail()"),/Included guide/);assert.equal(calls,0);
@@ -112,7 +112,7 @@ test('offline database, aliases, Valley picks and planter-linked variety identit
   const fragment=extractInlineScript(html).split('const lookupState=')[1].split("document.addEventListener('input',e=>{if(e.target.id==='lookup-query')")[0];
   const plans=[{id:'okra-plant',cropId:'okra',variety:'Alabama Red',bedId:''}];
   const ctx=vm.createContext({DB:db,state:{plans},plans,crops:()=>db.crops,cropBy:id=>db.crops.find(c=>c.id===id),bedBy:()=>null,localStorage:{getItem:()=>null},navigator:{onLine:false},hostedBuild:false,location:{protocol:'file:'},ref:()=>'',windowText:()=>'',ico:()=>'',h:String});
-  vm.runInContext('const lookupState='+fragment,ctx);
+  vm.runInContext(html.slice(html.indexOf('function careIcon('),html.indexOf('function legacyScanCare('))+'\nconst lookupState='+fragment,ctx);
   const run=code=>vm.runInContext(code,ctx);
   const rows=db.openPlantDB.varieties;
   assert.equal(new Set(rows.map(row=>row[0])).size,rows.length);
