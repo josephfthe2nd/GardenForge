@@ -47,7 +47,7 @@ for(const width of [320,390,1440])test(`care dashboard, accessible controls, jou
   const png=await makePng(page);await page.locator('#scan-gallery').setInputFiles(files(png));await page.waitForFunction(()=>!scanBusy&&scanDraft.images.length===1);
   await openContext(page);await page.locator('#scan-growing-location').selectOption('container');await page.locator('[data-scan="analyze"]').click();await page.waitForFunction(()=>!scanBusy&&scanDraft.status==='completed');
   assert.equal(received.growingLocation,'container');assert.equal(received.gardenZone,fixture.settings.zone);assert.equal(await page.locator('.care-card').count(),4);assert.ok(await overflowPx(page)<=0);
-  await page.getByText('Soil pH, feeding & seasonal care',{exact:true}).click();assert.match(await page.locator('.care-detail-grid').innerText(),/5.8–6.8/);
+  await page.getByText('Feeding & seasonal care',{exact:true}).click();assert.match(await page.locator('.ph-panel').innerText(),/5.8–6.8/);
   await page.getByText('Growing context & sources',{exact:true}).click();assert.ok(await overflowPx(page)<=0);assert.equal(await page.locator('a[href="https://plants.ces.ncsu.edu/plants/solanum-lycopersicum/"]').count(),1);
   await page.locator('.water-card summary').click();
   const sizes=await page.locator('.care-details summary, [data-scan="care-reminder"]').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().height));assert.ok(sizes.every(h=>h>=44));

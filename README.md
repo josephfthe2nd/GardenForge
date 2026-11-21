@@ -1,6 +1,8 @@
 # GardenForge Mobile
 
-Version 1.9.5-draft-photos-dev • Brownsville, Texas • November 19, 2026
+Version 1.10.0-care-visuals-dev • Brownsville, Texas • November 19, 2026
+
+**Care visuals and growth.** Care guides use offline SVG icons and a pH preference meter. Growth outlook shows stored days to first harvest or bloom, with today marked for saved plantings. It does not invent dates for intermediate growth stages or a predicted height curve. Heights from progress photos are graphed separately in centimetres, with original measurements listed below. Open a plant in Journal → Plant Lookup → My plants, a linked scan, or Garden → Growth outlook & measurements. No garden schema changes or API calls are required.
 
 Open **Journal → Plant Lookup** to search the offline catalog by common name, scientific name or variety. Look under **Tomato → Named varieties** for four included cultivar cards. **Add a plant or variety** saves any seed-packet or nursery name and notes, even offline. Use **Add to My Garden** to record a planting. **My plants** finds individual plantings, including variety names already on older records. Open the site online once to cache the offline app.
 
