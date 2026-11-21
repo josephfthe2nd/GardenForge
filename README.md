@@ -1,6 +1,6 @@
 # GardenForge Mobile
 
-Version 1.9.4-camera-controls-dev • Brownsville, Texas • November 19, 2026
+Version 1.9.5-draft-photos-dev • Brownsville, Texas • November 19, 2026
 
 Open **Journal → Plant Lookup** to search the offline catalog by common name, scientific name or variety. Look under **Tomato → Named varieties** for four included cultivar cards. **Add a plant or variety** saves any seed-packet or nursery name and notes, even offline. Use **Add to My Garden** to record a planting. **My plants** finds individual plantings, including variety names already on older records. Open the site online once to cache the offline app.
 
