@@ -18,7 +18,7 @@ function setup(mode='success',count=2){
   }
   abort(){aborts++;this.onabort?.();}
  }
- const ctx=vm.createContext({Blob,FileReader:Reader,Error,AbortSignal,scanBusy:false,scanDraft:structuredClone(saved),navigator:{onLine:true},state:{plans:[],settings:{zone:'10a'}},scanMessage:m=>messages.push(m),setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),beginScanEdit:()=>{},persistScan:async()=>{saves.push(structuredClone(ctx.scanDraft));},setScanBusy:b=>ctx.scanBusy=b,showScanView:()=>{},drawScanHistory:async()=>{},fetch:async(url,opts)=>{requests.push(JSON.parse(opts.body));return {ok:true,json:async()=>({analysis:{identification:'Mock plant'}})};}});
+ const ctx=vm.createContext({Blob,FileReader:Reader,Error,AbortSignal,scanBusy:false,scanModelMode:'haiku',scanDraft:structuredClone(saved),navigator:{onLine:true},state:{plans:[],settings:{zone:'10a'}},scanMessage:m=>messages.push(m),setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),beginScanEdit:()=>{},persistScan:async()=>{saves.push(structuredClone(ctx.scanDraft));},setScanBusy:b=>ctx.scanBusy=b,showScanView:()=>{},drawScanHistory:async()=>{},fetch:async(url,opts)=>{requests.push(JSON.parse(opts.body));return {ok:true,json:async()=>({analysis:{identification:'Mock plant'}})};}});
  vm.runInContext(code,ctx);
  return {ctx,saved,timers,messages,requests,saves,aborts:()=>aborts,setMode:value=>mode=value,analyze:()=>vm.runInContext('analyzeScan()',ctx)};
 }

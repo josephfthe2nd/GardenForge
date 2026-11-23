@@ -67,3 +67,29 @@ test('both models request a short health observation and per-candidate photo evi
  assert.equal(saved.analysis.healthObservation,expected.healthObservation);
  assert.throws(()=>validateResult({...analysis,matches:[{name:'Rose',evidence:null}]}));
 });
+
+test('Haiku-first uncertainty pauses with bounded questions and never calls Sonnet',async()=>{
+ const models=[];const r=await handleScan(req({...input(),mode:'haiku'}),env,async(_,o)=>{models.push(JSON.parse(o.body).model);return response({...analysis,uncertain:true,questions:['Are leaves opposite or alternate?','Any flowers?']});});
+ const data=await r.json();assert.equal(r.status,200);assert.deepEqual(models,[MODELS.primary]);assert.equal(data.escalated,false);assert.equal(data.clarification.questions.length,2);assert.equal(data.attempts.length,1);
+});
+test('uncertain Haiku supplies fallback questions if the provider omitted usable questions',async()=>{
+ const r=await handleScan(req({...input(),mode:'haiku'}),env,async()=>response({...analysis,confidence:.4,questions:['x'.repeat(241),null]}));const data=await r.json();assert.equal(data.clarification.questions.length,2);assert.equal(data.needsReview,true);
+});
+test('confident Haiku finishes without clarification; reassessment escalates only when needed and enabled',async()=>{
+ let r=await handleScan(req({...input(),mode:'haiku'}),env,async()=>response({...analysis,questions:['Unnecessary?']}));assert.equal((await r.json()).clarification,undefined);
+ for(const escalate of [true,false]){
+  const models=[];r=await handleScan(req({...input(),mode:'haiku-followup',notes:'Are leaves opposite? Yes.',escalate}),env,async(_,o)=>{const payload=JSON.parse(o.body);models.push(payload.model);assert.match(payload.system,/reassessment/);assert.match(payload.messages[0].content.at(-1).text,/Are leaves opposite/);return response({...analysis,uncertain:true});});
+  const data=await r.json();assert.equal(data.clarification,undefined);assert.deepEqual(models,escalate?[MODELS.primary,MODELS.escalation]:[MODELS.primary]);
+ }
+});
+test('direct Sonnet makes exactly one Sonnet call, respects configured model and never retries itself',async()=>{
+ for(const invalid of [false,true]){
+  const models=[];const r=await handleScan(req({...input(),mode:'sonnet'}),{...env,ANTHROPIC_SONNET_MODEL:'configured-sonnet'},async(_,o)=>{models.push(JSON.parse(o.body).model);return response(invalid?{...analysis,scientificName:null}:{...analysis,confidence:.4});});
+  assert.deepEqual(models,['configured-sonnet']);assert.equal(r.status,invalid?502:200);
+  if(!invalid){const data=await r.json();assert.equal(data.directSonnet,true);assert.equal(data.escalated,false);assert.equal(data.clarification,undefined);}
+ }
+});
+test('invalid Haiku-first output does not bypass the clarification choice with automatic Sonnet',async()=>{
+ let calls=0;const r=await handleScan(req({...input(),mode:'haiku'}),env,async()=>{calls++;return response({...analysis,nextSteps:null});});assert.equal(r.status,502);assert.equal(calls,1);
+ for(const mode of ['arbitrary-model',{},null])assert.throws(()=>validateInput({...input(),mode}));
+});

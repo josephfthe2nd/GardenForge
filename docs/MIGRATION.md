@@ -830,3 +830,8 @@ The optional `settings.gardenLayout` entry carries its own version. Garden docum
 ### Named plant and cultivar entries
 
 New lookup entries are ordinary custom crops with an optional `plantLookup` object containing version 1, the parent crop ID when available, the plant label, the cultivar label and an optional scientific name. The garden continues to use schema version 1. Existing records keep their IDs, and planting varieties entered in older versions appear in search. Garden backups, portable HTML and account sync carry custom crop records. Older editors may omit the extension when re-saving a custom crop. Generated guides are cached separately from the garden and can be requested again.
+
+
+## AI clarification compatibility (1.11.0 development)
+
+No garden, photo, or scan collection migration is needed. Existing schema-v1 scan records remain readable. The result envelope can carry optional `clarification.questions` and `directSonnet` presentation metadata, and analysis can include bounded `questions`. Older exports without these fields remain valid; new imports validate the optional envelope fields. User answers use the existing bounded notes field. Model routing is session state and a validated API request option, not a new required stored field. Older clients omitting the mode option retain their previous server behavior.
