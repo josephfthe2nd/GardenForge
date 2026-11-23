@@ -1,6 +1,8 @@
 # GardenForge Mobile
 
-Version 1.10.0-care-visuals-dev • Brownsville, Texas • November 19, 2026
+Version 1.11.0-scan-questions-dev • Brownsville, Texas • November 19, 2026
+
+**AI Camera model choices.** Choose Haiku to pause for up to three clarification questions when a scan is uncertain. Continue with your observations or new photos; a further Haiku assessment can use the enabled Sonnet review if still uncertain. Choose Sonnet directly in Analyze with, or use Use Sonnet now on a question card. Each submission is billed separately; selected specialist checks run again. Answers are kept in scan notes on Continue or Add / replace a photo. Original results remain in history. Model choice resets to Haiku when opening another scan or reloading.
 
 **Care visuals and growth.** Care guides use offline SVG icons and a pH preference meter. Growth outlook shows stored days to first harvest or bloom, with today marked for saved plantings. It does not invent dates for intermediate growth stages or a predicted height curve. Heights from progress photos are graphed separately in centimetres, with original measurements listed below. Open a plant in Journal → Plant Lookup → My plants, a linked scan, or Garden → Growth outlook & measurements. No garden schema changes or API calls are required.
 

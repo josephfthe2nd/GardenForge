@@ -30,7 +30,9 @@ test('new comparisons escape per-match evidence and exclude disease checks from 
 });
 test('prices follow selected checks and custom models never inherit default model prices',()=>{
  const fields={escalate:true,plantnet:true,disease:true};
- assert.match(render('scanPriceHTML(input,{plantnet:true})',fields),/\$0\.012/);
+ assert.match(render('scanPriceHTML(input,{plantnet:true})',fields),/billed Sonnet review/);
+ assert.match(render("scanModelMode='sonnet';scanPriceHTML(input,{escalation:'custom-sonnet'})",fields),/custom-sonnet/);
+ assert.match(render("scanModelMode='sonnet';scanPriceHTML(input,{})",fields),/No Haiku call is made/);
  assert.match(render('scanPriceHTML(input,{plantnet:true})',fields),/2 quota credits/);
  assert.doesNotMatch(render("scanPriceHTML(input,{primary:'custom',escalation:'other'})",fields),/\$0\./);
  assert.match(render('scanPriceHTML(input,{})',{escalate:false}),/review is off/);
